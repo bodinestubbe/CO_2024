@@ -1,0 +1,46 @@
+DATASET = ORTEC Caroline VeRoLog 2019
+NAME = Instance 4
+
+DAYS = 10
+TRUCK_CAPACITY = 15
+TRUCK_MAX_DISTANCE = 410
+
+TRUCK_DISTANCE_COST = 10
+TRUCK_DAY_COST = 0
+TRUCK_COST = 0
+TECHNICIAN_DISTANCE_COST = 0
+TECHNICIAN_DAY_COST = 0
+TECHNICIAN_COST = 0
+
+MACHINES = 2
+    1     7   105
+    2     8   875
+
+LOCATIONS = 7
+    1   188   376
+    2   482   382
+    3   383   405
+    4   345   265
+    5   213   377
+    6   196   290
+    7   330   515
+
+REQUESTS = 10
+    1     4     2     5     2     1
+    2     6     2     5     2     1
+    3     3     2     3     1     2
+    4     6     2     4     1     1
+    5     4     3     5     2     1
+    6     7     5     6     2     1
+    7     7     5     8     1     2
+    8     4     5     6     2     1
+    9     6     5     7     1     1
+   10     6     6     7     1     2
+
+TECHNICIANS = 5
+    1     1   145     5  0 1
+    2     1   130     9  1 1
+    3     2   700     5  1 1
+    4     1   175     7  1 1
+    5     5   510    10  0 1
+

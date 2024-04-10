@@ -3,25 +3,25 @@ import os
 import instances
 
 
-def getInt()    
-def checkAssignment(string,  value):
+# def getInt()    
+# def checkAssignment(string,  value):
      
 
-def getNextLine(f):
-    line = '\n'
-    while line and not line.strip():
-        line = f.readline()
-    return line
+# def getNextLine(f):
+#     line = '\n'
+#     while line and not line.strip():
+#         line = f.readline()
+#     return line
 
-def readInstance(instance_path):
+# def readInstance(instance_path):
     
-    try:
-        f = open(instance_path,'r')
-    except :
-        print("error occured opening the file")
+#     try:
+#         f = open(instance_path,'r')
+#     except :
+#         print("error occured opening the file")
     
 
-    dataset = getInt()
+#     dataset = getInt()
 
 
      
@@ -44,6 +44,6 @@ if __name__ == "__main__":
     for i in range(1,num_instances_to_test):
         instance_path = getInstancePath(i)
         print(instance_path)
-        readInstance(instance_path)
+        # readInstance(instance_path)
 
         

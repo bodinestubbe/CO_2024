@@ -1,4 +1,4 @@
-
+import math
 class TXT:
     dataset = 'DATASET'
     distance = 'DISTANCE'
@@ -63,12 +63,88 @@ class Technician(object):
 #            return '%d %d %d %d %s' % (self.ID,self.locationID,self.maxDayDistance,self.maxNrInstallations, ' '.join(str(x) for x in self.capabilities))
 
 
-     
-class Instance:            
-    def _init_(machines, requests, locations, technicians):
+
+
+    
+class Instance(object):            
+
+
+    def __init__(self, dataset, name, days, 
+               truckCapacity, truckMaxDistance, truckDistanceCost, truckDayCost,truckCost,
+               technicianDistanceCost, technicianDayCost, technicianCost,
+                machines, requests, locations, technicians):
+        self.dataset = dataset
+        self.name = name
+        self.days = days
+        self.truckCapacity = truckCapacity
+        self.truckMaxDistance= truckMaxDistance
+        self.truckDistanceCost= truckDistanceCost
+        self.truckDayCost = truckDayCost
+        self.truckCost  = truckCost
+        self.technicianDistanceCost = technicianDistanceCost
+        self.technicianDayCost = technicianDayCost
+        self.technicianCost = technicianCost
+
         self.Machines = machines
         self.Requests = requests
         self.Locations = locations
         self.Technicians = technicians
-        self.ReadDistance = None
-        self.calcDistance = None
+        self.distances = None
+        
+        self.calculateDistances()
+
+    def calculateDistances(self):
+        numLocs = len(self.Locations)
+        # print(numLocs)
+        self.distances = [[0 for x in range(numLocs) ] for x in range(numLocs)]
+        for i in range(numLocs):
+            loc1 = self.Locations[i]
+            for j in range(numLocs):
+                loc2 = self.Locations[j]
+                dist = math.ceil( math.sqrt( pow(loc1.X-loc2.X,2) + pow(loc1.Y-loc2.Y,2) ) )
+                self.distances[i][j] = self.distances[j][i] = int(dist)
+        
+        
+    
+    def __repr__(self):
+        print(f"{TXT.dataset} = { self.dataset}")
+        print(f"{TXT.name} = { self.name}")
+        print(f"{TXT.days} = {self.days}")
+
+        print(f"{TXT.truckCapacity} = {self.truckCapacity}")
+        print(f"{TXT.truckMaxDistance} = {self.truckMaxDistance}")
+
+        print(f"{TXT.truckDistanceCost} = {self.truckDistanceCost}")
+        print(f"{TXT.truckDayCost} = {self.truckDayCost}")
+        print(f"{TXT.truckCost} = {self.truckCost}")
+
+        print(f"{TXT.technicianDistanceCost} = {self.technicianDistanceCost}")
+        print(f"{TXT.technicianDayCost} = {self.technicianDayCost}")
+        print(f"{TXT.technicianCost} = {self.technicianCost}")
+
+        print(f"Machines = {len(self.Machines)}")
+        for i in range (len(self.Machines)):
+            print(self.Machines[i])
+
+        print(f"Locations = {len(self.Locations)}")
+        for i in range (len(self.Locations)):
+            print(self.Locations[i])
+
+        print(f"Requests = {len(self.Requests)}")
+        for i in range (len(self.Requests)):
+            print(self.Requests[i])
+        
+
+        print(f"Technicians = {len(self.Technicians)}")
+        for i in range (len(self.Technicians)):
+            print(self.Technicians[i])
+        
+        print("Distances between locations")
+        for i in range(len(self.Locations)):
+            for j in range(len(self.Locations)):
+                print(f"Location ({i+1}, {j+1}): {self.distances[i][j]}")
+            print("\n")
+        
+        
+    
+        

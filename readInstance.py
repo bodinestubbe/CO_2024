@@ -3,8 +3,9 @@ import os
 import instances
 
 
-# def getInt()    
+# def getInt():   
 # def checkAssignment(string,  value):
+     
      
 
 # def getNextLine(f):
@@ -13,15 +14,15 @@ import instances
 #         line = f.readline()
 #     return line
 
-# def readInstance(instance_path):
+def readInstance(instance_path):
     
-#     try:
-#         f = open(instance_path,'r')
-#     except :
-#         print("error occured opening the file")
+    try:
+        f = open(instance_path,'r')
+    except :
+        print("error occured opening the file")
     
 
-#     dataset = getInt()
+    print(f.readlines())
 
 
      
@@ -39,11 +40,12 @@ def getInstancePath(instance_number):
 
 if __name__ == "__main__":
     
-    num_instances_to_test = 3
+    num_instances_to_test = 2
+
     
     for i in range(1,num_instances_to_test):
         instance_path = getInstancePath(i)
         print(instance_path)
-        # readInstance(instance_path)
+        readInstance(instance_path)
 
         

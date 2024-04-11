@@ -1,21 +1,21 @@
-class LANG:
-    class TXT:
-        dataset = 'DATASET'
-        distance = 'DISTANCE'
-        name = 'NAME'
-        days = 'DAYS'
-        truckCapacity = 'TRUCK_CAPACITY'
-        truckMaxDistance = 'TRUCK_MAX_DISTANCE'
-        truckDistanceCost = 'TRUCK_DISTANCE_COST'
-        truckDayCost = 'TRUCK_DAY_COST'
-        truckCost = 'TRUCK_COST'
-        technicianDistanceCost = 'TECHNICIAN_DISTANCE_COST'
-        technicianDayCost = 'TECHNICIAN_DAY_COST'
-        technicianCost = 'TECHNICIAN_COST'
-        machines = 'MACHINES'
-        locations = 'LOCATIONS'
-        requests = 'REQUESTS'
-        technicians = 'TECHNICIANS'
+
+class TXT:
+    dataset = 'DATASET'
+    distance = 'DISTANCE'
+    name = 'NAME'
+    days = 'DAYS'
+    truckCapacity = 'TRUCK_CAPACITY'
+    truckMaxDistance = 'TRUCK_MAX_DISTANCE'
+    truckDistanceCost = 'TRUCK_DISTANCE_COST'
+    truckDayCost = 'TRUCK_DAY_COST'
+    truckCost = 'TRUCK_COST'
+    technicianDistanceCost = 'TECHNICIAN_DISTANCE_COST'
+    technicianDayCost = 'TECHNICIAN_DAY_COST'
+    technicianCost = 'TECHNICIAN_COST'
+    machines = 'MACHINES'
+    locations = 'LOCATIONS'
+    requests = 'REQUESTS'
+    technicians = 'TECHNICIANS'
     
 class Machine(object):
     def __init__(self,ID,size,idlePenalty):

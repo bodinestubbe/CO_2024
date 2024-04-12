@@ -3,12 +3,13 @@ from gurobipy import Model, GRB,quicksum
 class VRPtruck:
     def __init__(self, instance):
         self.instance = instance
+
     def solve (self): 
         model= Model("VRPTrucks")
 
         requests=range(len(self.instance.requests))  
         locations= range(len(self.instance.locations))
-        distance_matrix = self.instance.distance_matrix
+        distance_matrix = self.instance.distances
         x= model.addVars(requests, locations, vtype=GRB.BINARY, name="x")
         model.setObjective(quicksum(distance_matrix[0][j] * x[i, j] for i in requests for j in locations), GRB.MINIMIZE)
         model.addConstrs((quicksum(x[i, j] for j in locations) == 1 for i in requests))
@@ -27,11 +28,5 @@ class VRPtruck:
     
     
 
-    
-
-    # def solve (self):
-    #      machine_request={}
-    #      for request in self.requests: 
-    #          machine_request[request.machineID].append(request)
 
 

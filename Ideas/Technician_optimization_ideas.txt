@@ -1,0 +1,4 @@
+Whether to take 4 days+1day off or 5 days+2 days off:
+(Final touch)
+It would be interesting to compare the 'benefit' of taking day 5 with the 'benefit'  of taking day 6&7. 
+as a measure we could use the solved machines*idling cost for example (idea TA)

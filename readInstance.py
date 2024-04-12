@@ -107,7 +107,7 @@ def getInstancePath(instance_number):
 
 if __name__ == "__main__":
     
-    num_instances_to_test = 2
+    num_instances_to_test = 3
 
     setOfInstances = []
     

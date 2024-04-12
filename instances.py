@@ -35,6 +35,7 @@ class Request(object):
         self.toDay = toDay
         self.machineID = machineID
         self.amount = amount
+        self.isInstalled = False
 
     def __repr__(self):
         return '{:>5} {:>5} {:>5} {:>5} {:>5} {:>5}'.format(self.ID,self.customerLocID,self.fromDay,self.toDay,self.machineID,self.amount)
@@ -57,7 +58,10 @@ class Technician(object):
         self.maxDayDistance = maxDayDistance
         self.maxNrInstallations = maxNrInstallations
         self.capabilities = capabilities
-
+        self.DaysOff = []
+        self.workedConsecutiveDays = 0
+        self.currentLocationID = 0
+    
     def __repr__(self):
         return '{:>5} {:>5} {:>5} {:>5}  {:}'.format( self.ID,self.locationID,self.maxDayDistance,self.maxNrInstallations, ' '.join(str(x) for x in self.capabilities) )
 #            return '%d %d %d %d %s' % (self.ID,self.locationID,self.maxDayDistance,self.maxNrInstallations, ' '.join(str(x) for x in self.capabilities))

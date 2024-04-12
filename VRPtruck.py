@@ -1,4 +1,6 @@
 from gurobipy import Model, GRB,quicksum
+from instances import Instance as Instance
+import readInstance
 
 class VRPtruck:
     def __init__(self, instance):
@@ -7,10 +9,15 @@ class VRPtruck:
     def solve (self): 
         model= Model("VRPTrucks")
 
-        requests=range(len(self.instance.requests))  
-        locations= range(len(self.instance.locations))
+        requests = self.instance.Requests
+        locations = self.instance.Location
         distance_matrix = self.instance.distances
-        x= model.addVars(requests, locations, vtype=GRB.BINARY, name="x")
+        
+        x = model.addVars(requests, locations, vtype=GRB.BINARY, name="x")
+        
+        
+        
+        
         model.setObjective(quicksum(distance_matrix[0][j] * x[i, j] for i in requests for j in locations), GRB.MINIMIZE)
         model.addConstrs((quicksum(x[i, j] for j in locations) == 1 for i in requests))
         model.optimize()
@@ -22,10 +29,10 @@ class VRPtruck:
         else:
             print("Solution not found")
 
-    if __name__ == "__main__":
-        solve()
-        
+
     
+    Instance_1 = readInstance.readInstance(readInstance.getInstancePath(20))
+    print(range(len(Instance_1.Requests)))
     
 
 

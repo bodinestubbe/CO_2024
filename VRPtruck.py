@@ -1,39 +1,22 @@
-from gurobipy import Model, GRB,quicksum
-from instances import Instance as Instance
+import instances
 import readInstance
+import numpy as np
 
-class VRPtruck:
-    def __init__(self, instance):
-        self.instance = instance
+def generate_feasible_truck_tour(instance):
 
-    def solve (self): 
-        model= Model("VRPTrucks")
+    routes=[]
+    depot_id=1
 
-        requests = self.instance.Requests
-        locations = self.instance.Location
-        distance_matrix = self.instance.distances
-        
-        x = model.addVars(requests, locations, vtype=GRB.BINARY, name="x")
-        
-        
-        
-        
-        model.setObjective(quicksum(distance_matrix[0][j] * x[i, j] for i in requests for j in locations), GRB.MINIMIZE)
-        model.addConstrs((quicksum(x[i, j] for j in locations) == 1 for i in requests))
-        model.optimize()
-        if model.status == GRB.OPTIMAL:
-            for i in requests:
-                for j in locations:
-                    if x[i, j].x > 0.99:  # Check if variable value is close to 1 (assigned)
-                        print(f"Request {i+1} assigned to Location {j+1}")
-        else:
-            print("Solution not found")
+    for request in instances.Requests: 
+        current_route = [depot_id, request.customerLocID, depot_id]
+        routes.append(current_route)
 
+    return routes
 
+instance_path="/Users/myriam/Desktop/University /Year 3 BA /CO/Case/CO_2024/instances 2024/CO_Case2401.txt"
+instance= readInstance.readInstance(instance_path)
+routes = generate_feasible_truck_tour(instance)
+print("Feasible Truck Routes:")
+for i, route in enumerate(routes):
+    print(f"Route {i+1}: {route}")
     
-    Instance_1 = readInstance.readInstance(readInstance.getInstancePath(20))
-    print(range(len(Instance_1.Requests)))
-    
-
-
-

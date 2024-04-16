@@ -105,6 +105,16 @@ def getInstancePath(instance_number):
             file_name += str(instance_number)+ '.txt'
     return  os.path.join(path,file_name).replace("\\","/")
 
+
+def getInstances(num_instances_to_test):
+    setOfInstances = []
+    
+    for i in range(1,num_instances_to_test):
+        instance_path = getInstancePath(i)
+        setOfInstances.append(readInstance(instance_path))
+
+    return setOfInstances
+
 if __name__ == "__main__":
     
     num_instances_to_test = 3

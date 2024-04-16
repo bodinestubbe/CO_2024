@@ -53,6 +53,7 @@ def generate_feasible_technician_tour(instance):
                         cumDist += distance_to_request
                         technician.currentLocationID = request.customerLocID
                         request.isInstalled = True
+                        request.installationDay = day
 
                         # Debug information
                         #print(f"Tech {technician.ID} to Request {request.ID} (Location {technician.currentLocationID}) on Day {day}: Cumulative Distance = {cumDist}")

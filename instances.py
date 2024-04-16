@@ -36,6 +36,8 @@ class Request(object):
         self.machineID = machineID
         self.amount = amount
         self.isInstalled = False
+        self.isDelivered = False
+        self.currentRoute = -1
 
     def __repr__(self):
         return '{:>5} {:>5} {:>5} {:>5} {:>5} {:>5}'.format(self.ID,self.customerLocID,self.fromDay,self.toDay,self.machineID,self.amount)

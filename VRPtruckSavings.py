@@ -34,7 +34,7 @@ def generate_savings(requests, distances):
     
     return {k: v for k, v in sorted(savings.items(), key=lambda item: item[1], reverse = True)}
 
-def canMerge(reqIDS):
+def canMerge(reqID1, truck1, reqID2, truck2):
     reqID1 = reqIDS[0]
     reqID2 = reqIDS[1]
 
@@ -62,19 +62,21 @@ def generate_feasible_truck_tour(instance):
     for reqIDs, value in savings.items():
         
         for truck1, truck2 in itertools.product(trucks, repeat = 2):
-        reqID1 = reqIDs[0]
-        reqID2 = reqIDs[1]
+            reqID1 = reqIDs[0]
+            reqID2 = reqIDs[1]
 
-        if
-
-        # check if all requests in route have overlap in delivery time
-        if hasOverlap(reqID1):
+            if reqID1 in truck1.route and reqID2 in truck2.route and truck1!= truck2:
+                if canMerge(reqID1, truck1, reqID2, truck2):
 
 
-        # is it in a route
-        # is it still within capacity
-        
-        # has max km not been surpassed
+            # check if all requests in route have overlap in delivery time
+            if hasOverlap(reqID1):
+
+
+            # is it in a route
+            # is it still within capacity
+            
+            # has max km not been surpassed
 
 
 

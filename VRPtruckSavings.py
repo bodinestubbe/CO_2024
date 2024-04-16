@@ -16,8 +16,8 @@ class Truck:
 
 def generate_savings(distances):
     savings = []
-    for i in range(len(distances)):
-        for j in range(len(distances)):
+    for i in range(1,len(distances)):
+        for j in range(1,len(distances)):
             savings.append(((i,j),distances[i][0] + distances[0][j] - distances[i][j]))
     
     return sorted(savings, key = lambda x:x[1], reverse = True)
@@ -37,7 +37,7 @@ def generate_feasible_truck_tour(instance):
     trucks = [Truck(instance.truckCapacity, instance.truckMaxDistance, request) for request in instance.requests]
     
     for saving in savings:
-        
+
 
 
 

@@ -36,6 +36,7 @@ class Request(object):
         self.machineID = machineID
         self.amount = amount
         self.isInstalled = False
+        self.dayOfInstallation = 0
         self.isDelivered = False
         self.currentRoute = -1
 

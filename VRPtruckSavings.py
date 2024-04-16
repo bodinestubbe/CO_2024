@@ -2,7 +2,7 @@ from instances import Instance as Instance
 import readInstance
 from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
 import numpy as np
-
+import itertools
 class Truck:
 
     def __init__(self, capacity, max_km):
@@ -18,6 +18,7 @@ class Truck:
 
 def generate_savings(requests, distances):
     savings = {}
+    
     for i in range(0,len(requests)):
         for j in range(0,len(requests)):
             if i != j:
@@ -60,11 +61,13 @@ def generate_feasible_truck_tour(instance):
     
     for reqIDs, value in savings.items():
         
-    
+        for truck1, truck2 in itertools.product(trucks, repeat = 2):
         reqID1 = reqIDs[0]
         reqID2 = reqIDs[1]
 
-        # do all requests in route have overlap in delivery time
+        if
+
+        # check if all requests in route have overlap in delivery time
         if hasOverlap(reqID1):
 
 

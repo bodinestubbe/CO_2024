@@ -4,7 +4,7 @@ from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
 import numpy as np
 
 def generate_feasible_technician_tour(instance):
-    planning_horizon = range(1, instance.days + 1)
+    planning_horizon = range(2, instance.days + 1)
     distance_matrix = instance.distances
 
     TECHNICIAN_DISTANCE = 0
@@ -53,6 +53,7 @@ def generate_feasible_technician_tour(instance):
                         cumDist += distance_to_request
                         technician.currentLocationID = request.customerLocID
                         request.isInstalled = True
+                        request.installationDay = day
 
                         # Debug information
                         #print(f"Tech {technician.ID} to Request {request.ID} (Location {technician.currentLocationID}) on Day {day}: Cumulative Distance = {cumDist}")

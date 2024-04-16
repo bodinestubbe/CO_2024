@@ -57,8 +57,20 @@ def generate_feasible_truck_tour(instance):
     distance_matrix = instance.distances
     savings = generate_savings(instance.Requests, distance_matrix)
     print(savings)
-    trucks = [Truck(instance.maxCapacity, instance.maxDistance) for request in instance.Requests]
     
+    # make a dictionary with every request as key and the value is the assigned truck where you intitate each truck
+    # with the max capacity and max distance
+    assigned_trucks = {request.ID: Truck(instance.truckCapacity, instance.truckMaxDistance) for request in instance.Requests}
+    print(assigned_trucks)
+
+    # iterate over the savings dictionary and check if you can merge the requests
+    
+
+
+
+
+
+
     for reqIDs, value in savings.items():
         
         for truck1, truck2 in itertools.product(trucks, repeat = 2):
@@ -70,7 +82,7 @@ def generate_feasible_truck_tour(instance):
 
 
             # check if all requests in route have overlap in delivery time
-            if hasOverlap(reqID1):
+            #if hasOverlap(reqID1):
 
 
             # is it in a route
@@ -83,5 +95,7 @@ def generate_feasible_truck_tour(instance):
 
 
 
-Instance_1 = readInstance.readInstance(readInstance.getInstancePath(1))
-generate_feasible_truck_tour(Instance_1)
+#Instance_1 = readInstance.readInstance(readInstance.getInstancePath(1))
+#generate_feasible_truck_tour(Instance_1)
+
+#trucks = [Truck(instance.maxCapacity, instance.maxDistance) for request in instance.Requests]

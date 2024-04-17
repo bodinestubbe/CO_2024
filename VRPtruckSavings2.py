@@ -1,6 +1,6 @@
 from instances import Instance as Instance
 import readInstance
-from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
+# from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
 import numpy as np
 import itertools
 class Truck:
@@ -38,42 +38,54 @@ def canMerge(reqID1, truck1, reqID2, truck2, requests, savings):
     if truck1 == truck2:
         return False
     # do all requests in route have overlap in delivery time
-    if hasOverlap(reqID1, reqID2):
-        return False
-    
-    # is it in a route
-    if len(truck2.route) > 3:
-        return  False
+    if hasOverlap(truck1, truck2):
+         # is it in a route
+        # if len(truck2.route) > 3:
+        #     return  False
     # is it still within capacity
-    if truck1.current_load + requests[reqID2].amount > truck1.capacity:
-        return False
+        # if truck1.current_load + requests[reqID2].amount * requests[reqID2].machine.size > truck1.capacity:
+        if truck1.current_load + truck2.current_load > truck1.capacity:
+            return False
     # has max km not been surpassed
-    if truck1.current_km + truck2.current_km - savings[(reqID1, reqID2)] > truck1.max_km:
-        return False
+        if truck1.current_km + truck2.current_km - savings[(reqID1, reqID2)] > truck1.max_km:
+            return False
+    
+   
 
     return True
 
 
-def hasOverlap(reqID1, reqID2):
-    return reqID1.toDay >= reqID2.fromDay and reqID2.toDay >= reqID1.fromDay
+def hasOverlap(truck1, truck2):
+    return truck1.largestFromDate >= truck2.largestFromDate and truck2.smallestToDate >= truck1.smallestToDate
 
 ### this one has to be fixed: take into account distance from and to depot
-def calculate_truck_distance(truck, requests, distance_matrix):
-    distance = 0
-    for i in range(1, len(truck.route)):
-        distance += distance_matrix[requests[truck.route[i-1]].customerLocID][requests[truck.route[i]].customerLocID]
-    return distance #probably wrong
+# def calculate_truck_distance(truck, requests, distance_matrix):
+#     distance = 0
+#     for i in range(1, len(truck.route)):
+#         distance += distance_matrix[requests[truck.route[i-1]].customerLocID][requests[truck.route[i]].customerLocID]
+#     return distance #probably wrong
 
-def calculate_truck_load(truck, requests):
+def calculate_truck_distance(truck, requests, distance_matrix):
+    request_id = truck.route[1]
+    custLoc = 0
+    for request in requests:
+        if request_id == request.ID:
+            custLoc = request.customerLocID
+
+    return distance_matrix[0][custLoc-1]*2
+
+
+def calculate_truck_load(truck, requests, machines):
     load = 0
     for reqID in truck.route:
         if reqID == 0:
-            continue
-        load += requests[reqID - 1].amount
+            continue        
+        load += requests[reqID - 1].amount * machines[requests[reqID - 1].machineID-1].size
     return load
 
 def generate_feasible_truck_tour(instance):
     requests = instance.Requests
+    machines = instance.Machines
     planning_horizon = range(1, instance.days + 1)
     distance_matrix = instance.distances
     savings = generate_savings(instance.Requests, distance_matrix)
@@ -84,7 +96,7 @@ def generate_feasible_truck_tour(instance):
     assigned_trucks = {request.ID: Truck(instance.truckCapacity, instance.truckMaxDistance) for request in instance.Requests}
     for reqID, truck in assigned_trucks.items():
         truck.route.insert(len(truck.route)-1, reqID)
-        truck.current_load = calculate_truck_load(truck, requests)
+        truck.current_load = calculate_truck_load(truck, requests, machines)
         truck.current_km = calculate_truck_distance(truck, requests, distance_matrix)
 
     # iterate over the savings dictionary and check if you can merge the requests
@@ -99,11 +111,19 @@ def generate_feasible_truck_tour(instance):
             index = truck1.route.index(reqID1)
             truck1.route.insert(index + 1, reqID2)
             assigned_trucks[reqID2] = truck1
-            truck1.current_load = calculate_truck_load(truck1, requests)
-            truck1.current_km = calculate_truck_distance(truck1, requests, distance_matrix)
+            truck1.current_load = calculate_truck_load(truck1, requests, machines)
+            truck1.current_km += truck2.current_km - savings[(reqID1, reqID2)]
+            if truck1.current_km > truck1.max_km:
+                print("error, order of requests is wrong, update constraints in can merge")
             
             # update truck 2
             truck2.route.remove(reqID2)
-            truck2.current_load = calculate_truck_load(truck2, requests)
+            truck2.current_load = calculate_truck_load(truck2, requests, machines)
             truck2.current_km = calculate_truck_distance(truck2, requests, distance_matrix)
             # assigned_trucks.pop(reqID2) (could add this line to remove the truck from the dictionary)
+
+    for reqid, truck in assigned_trucks.items():
+        print(truck.route)
+
+Instance_1 = readInstance.readInstance(readInstance.getInstancePath(1))
+generate_feasible_truck_tour(Instance_1)

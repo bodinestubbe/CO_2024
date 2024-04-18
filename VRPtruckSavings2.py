@@ -85,7 +85,7 @@ def calculate_truck_load(truck, requests, machines):
 
 def updateDeliveryWindow(truck1, truck2):
     toDay = min(truck1.smallestToDate, truck2.smallestToDate)
-    fromDay = max(truck1.largestFromDate, truck2.largestFromDate)
+    fromDay = max(truck1.largestFromDate, truck2.largestFromDate) #something check here
 
     return toDay, fromDay
 
@@ -107,11 +107,11 @@ def generate_feasible_truck_tour(instance):
         truck.route.insert(len(truck.route)-1, reqID)
         truck.current_load = calculate_truck_load(truck, requests, machines)
         truck.current_km = calculate_truck_distance(truck, requests, distance_matrix)
-        truck.smallestToDate = requests[reqID-1].toDay
-        truck.largestFromDate = requests[reqID-2].fromDay
+        truck.smallestToDate = requests[reqID-1].toDay #something goes wrong here
+        truck.largestFromDate = requests[reqID-2].fromDay #or here
     
-    # for reqid, truck in assigned_trucks.items():
-    #     print(truck.route, truck.capacity, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+    for reqid, truck in assigned_trucks.items():
+        print(truck.route, truck.capacity, truck.current_load, truck.largestFromDate, truck.smallestToDate)
 
     # iterate over the savings dictionary and check if you can merge the requests
     for reqIDS, saving in savings.items():
@@ -125,12 +125,12 @@ def generate_feasible_truck_tour(instance):
 
             index = truck1.route.index(reqID1)
             truck1.route.insert(index + 1, reqID2)
-            assigned_trucks[reqID2] = truck1
+            # assigned_trucks[reqID2] = truck1 this?
             truck1.current_load = calculate_truck_load(truck1, requests, machines)
             truck1.current_km += truck2.current_km - savings[(reqID1, reqID2)]
             
             truck1.smallestToDate, truck1.largestFromDate = updateDeliveryWindow(truck1, truck2)
-            assigned_trucks[reqID2] = truck1
+            assigned_trucks[reqID2] = truck1 #or this
             if truck1.current_km > truck1.max_km:
                 print("error, order of requests is wrong, update constraints in can merge")
             
@@ -141,8 +141,8 @@ def generate_feasible_truck_tour(instance):
             # assigned_trucks.pop(reqID2) #(could add this line to remove the truck from the dictionary)
 
     for reqid, truck in assigned_trucks.items():
-        print(truck.route, truck.capacity, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+        print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
         
 
-Instance_1 = readInstance.readInstance(readInstance.getInstancePath(1))
+Instance_1 = readInstance.readInstance(readInstance.getInstancePath(20))#error still for 20
 generate_feasible_truck_tour(Instance_1)

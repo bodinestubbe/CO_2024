@@ -29,40 +29,6 @@ def select_technician(instance, request, available_technicians, current_distance
     selected_technician = random.choices(candidates, weights=normalized_weights, k=1)[0]
     return selected_technician
 
-def filter_tours_by_technician(technician_tours, technician_distances):
-    # Process each technician's tours
-    for tech_id in technician_tours:
-        tours = technician_tours[tech_id]
-        distances = technician_distances[tech_id]
-
-        # Find indices of tours that have the same combination of requests
-        same_tour_indices = find_same_combination_tours(tours)
-        to_remove = set()
-
-        # Filter tours based on the best (minimum) distance
-        for tour, indices in same_tour_indices.items():
-            best_index = min(indices, key=lambda i: distances[i])  # Get index of the minimum distance
-            # Set indices to remove excluding the best one
-            to_remove.update(i for i in indices if i != best_index)
-        
-        # Remove identified tours and distances in reverse order to avoid indexing issues
-        for index in sorted(to_remove, reverse=True):
-            del tours[index]
-            del distances[index]
-
-    return technician_tours, technician_distances
-
-def find_same_combination_tours(tours):
-    tour_indices = {}
-    for index, tour in enumerate(tours):
-        tour_set = frozenset(tour)
-        if tour_set in tour_indices:
-            tour_indices[tour_set].append(index)
-        else:
-            tour_indices[tour_set] = [index]
-
-    return {tuple(sorted(tour_set)): indices for tour_set, indices in tour_indices.items() if len(indices) > 1}
-
 def initial_technician_tours_GRASP2(instance, time_limit_seconds):
     start_time = time.time()
     possible_tours = {tech.ID: set() for tech in instance.Technicians}
@@ -345,18 +311,10 @@ if __name__ == "__main__":
     # elif len(instance.Requests) >= 40:
     #     time_limit_seconds = 30    
 
-    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 20)
-
-    filtered_tours, filtered_distances = filter_tours_by_technician(possible_tours, tour_distances)
-    # print("Filtered Tours for Tech 1:", filtered_tours[1])
-    # print("Filtered Distances for Tech 1:", filtered_distances[1])
-    # print("Number of Tours for Tech 1:", len(filtered_tours[2]))
-    # print("Tours for Tech 1 Original:", possible_tours[2])
-    # print("Distance for Tech 1 Original:", tour_distances[2])
-
+    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 60)
 
     # # Run the MIP solver to assign tours to technicians
-    chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, filtered_tours, filtered_distances)
+    chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, possible_tours, tour_distances)
 
     # Schedule the tours based on the start days and working days rule
     schedule = scheduling(instance, chosen_tours)

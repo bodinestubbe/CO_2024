@@ -2,6 +2,8 @@ from instances import Instance as Instance
 import readInstance
 from gurobipy import Model, GRB, quicksum
 import random
+from solution import DailySchedule, Solution
+import time
 
 def select_technician(instance, request, available_technicians, current_distances):
     # Filter candidates based on the request's machine type, technician's capabilities, and max distance
@@ -27,12 +29,63 @@ def select_technician(instance, request, available_technicians, current_distance
     selected_technician = random.choices(candidates, weights=normalized_weights, k=1)[0]
     return selected_technician
 
+def initial_technician_tours_GRASP2(instance, time_limit_seconds):
+    start_time = time.time()
+    possible_tours = {tech.ID: set() for tech in instance.Technicians}
+    tour_distances = {tech.ID: {} for tech in instance.Technicians}  # Dictionary to store distances of tours
+
+    while time.time() - start_time < time_limit_seconds:
+        for request in range(1, len(instance.Requests)):
+            max_number_of_requests = request + 1
+
+            available_technicians = list(instance.Technicians)
+            current_tours = {tech.ID: [] for tech in instance.Technicians}
+            current_distances = {tech.ID: 0 for tech in instance.Technicians}
+            last_locations = {tech.ID: tech.locationID for tech in instance.Technicians}
+
+            # Shuffle requests for GRASP's randomization component
+            shuffled_requests = list(instance.Requests)  # Make a copy if you need to preserve the original order
+            random.shuffle(shuffled_requests)
+
+            for req in shuffled_requests:
+                technician = select_technician(instance, req, available_technicians, current_distances)
+                if technician:
+                    request_distance = instance.distances[last_locations[technician.ID] - 1][req.customerLocID - 1]
+                    new_total_distance = current_distances[technician.ID] + request_distance
+                    return_home_distance = instance.distances[req.customerLocID - 1][technician.locationID - 1]
+
+                    if new_total_distance + return_home_distance <= technician.maxDayDistance:
+                        current_tours[technician.ID].append(req.ID)
+                        current_distances[technician.ID] = new_total_distance
+                        last_locations[technician.ID] = req.customerLocID
+                        if (len(current_tours[technician.ID]) >= max_number_of_requests or
+                                len(current_tours[technician.ID]) >= technician.maxNrInstallations):
+                            available_technicians.remove(technician)
+
+            for tech_id, tour in current_tours.items():
+                if tour:
+                    tour_tuple = tuple(tour)
+                    final_distance = current_distances[tech_id] + instance.distances[last_locations[tech_id] - 1][instance.Technicians[tech_id - 1].locationID - 1]
+                    if tour_tuple not in possible_tours[tech_id]:
+                        possible_tours[tech_id].add(tour_tuple)
+                        tour_distances[tech_id][tour_tuple] = final_distance
+        
+        # Check if it's time to terminate
+        if time.time() - start_time >= time_limit_seconds:
+            break
+
+    # Convert sets to lists for indexing
+    final_tours = {tech_id: [list(tour) for tour in possible_tours[tech_id]] for tech_id in possible_tours}
+    final_distances = {tech_id: [tour_distances[tech_id][tour_tuple] for tour_tuple in possible_tours[tech_id]] for tech_id in possible_tours}
+
+    return final_tours, final_distances
+
 def initial_technician_tours_GRASP(instance, iterations=50):
     possible_tours = {tech.ID: set() for tech in instance.Technicians}
     tour_distances = {tech.ID: {} for tech in instance.Technicians}  # Dictionary to store distances of tours
 
-    for request in range(1, len(instance.Requests)+1):
-        max_number_of_requests = request
+    for request in range(1, len(instance.Requests)):
+        max_number_of_requests = request+1
 
         for _ in range(iterations):
             available_technicians = list(instance.Technicians)
@@ -105,6 +158,11 @@ def mip_solver(instance, possible_tours, tour_distances):
     # Activate r if a technician works 
     model.addConstrs((r[p] >= y[p, t] for p in possible_tours for t in range(len(possible_tours[p]))), "technician_usage")
 
+    # Sum of r <= Sum of y
+    model.addConstr(quicksum(r[p] for p in possible_tours) <= quicksum(y[p, t] for p in possible_tours for t in range(len(possible_tours[p]))))
+
+    time_limit = 300
+    model.setParam('TimeLimit', time_limit)
     model.update()
     model.optimize()
 
@@ -113,8 +171,8 @@ def mip_solver(instance, possible_tours, tour_distances):
             print(f"{v.varName} = {v.X}")
 
     # Print status
-    if model.status == GRB.OPTIMAL:
-        print("*" * 50+ ' Optimal solution found! '+ "*" * 50)
+    if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
+        print('\033[95m' + "*" * 50+ ' Optimal solution found! '+ "*" * 50 + '\033[0m')
         print()
 
         print("Chosen Tours for Each Technician:")
@@ -132,6 +190,7 @@ def mip_solver(instance, possible_tours, tour_distances):
 
         print(f"Total Distance: {total_distance}")
         print(f"Number of Technicians Used: {r.sum().getValue()}")
+        print(f"Number of Tours: {y.sum().getValue()}")
         print("Total cost= {}".format(model.ObjVal))
 
     elif model.status == GRB.INFEASIBLE:
@@ -139,7 +198,7 @@ def mip_solver(instance, possible_tours, tour_distances):
     else:
         print('Optimization ended with status ' + str(model.status))
 
-    return chosen_tours
+    return chosen_tours, total_distance, model.ObjVal, r.sum().getValue(), y.sum().getValue()
 
 def sort_tours_by_start_day(instance, possible_tours):
     earliest_start_days = {}
@@ -160,17 +219,16 @@ def sort_tours_by_start_day(instance, possible_tours):
         key=lambda k: (earliest_start_days[k], len(possible_tours[k[0]][k[1]])),
         reverse=True
     )
-
+    print('\033[95m' + "*" * 70 + '\033[0m')
     for key in sorted_tour_keys:
         tech_id, tour_id = key
         tour = possible_tours[tech_id][tour_id]
-        print()
         print(f"Technician {tech_id}, Tour {tour_id}: Earliest Start Day = {earliest_start_days[key]}, Number of Requests = {len(tour)}")
 
     return sorted_tour_keys, earliest_start_days
 
 def working_days_rule(sorted_tour_keys, earliest_start_days):
-
+    # will adjust this later
     # Initialize the starting day for scheduling
     current_day = 1
     scheduled_days = {}
@@ -220,20 +278,70 @@ def scheduling(instance, possible_tours):
         technician_schedules[tech_id].append((tour_requests, scheduled_day))
 
     # Print the schedule for each technician with full tour details
-    print("Schedule for Each Technician:")
+    print(f"\nSchedule for Each Technician:")
     for tech_id, schedules in technician_schedules.items():
         print(f"Technician {tech_id}:")
         for tour_requests, day in sorted(schedules, key=lambda x: x[1]):  # Sort by day for better readability
             print(f"  Day {day}: {tour_requests}")
+    
+    return technician_schedules
+
+def add_schedule_solution(schedule, solution):
+
+    for tech_id, schedules in schedule.items():
+        for tour_requests, day in sorted(schedules, key=lambda x: x[1]): 
+            daily_schedule = DailySchedule(day)
+            daily_schedule.add_technician_schedule(tech_id, tour_requests)
+            solution.add_daily_schedule(daily_schedule)
 
 
 if __name__ == "__main__":
-    instance_path = readInstance.getInstancePath(20)
+    instance_path = readInstance.getInstancePath(11)
     instance = readInstance.readInstance(instance_path)
 
-    possible_tours, tour_distances  = initial_technician_tours_GRASP(instance, iterations=100)
+    print('\033[95m' + "*" * 50 + " Solving...... " + "*" * 50 + '\033[0m')
 
-    chosen_tour = mip_solver(instance, possible_tours, tour_distances)
 
-    schedule = scheduling(instance, chosen_tour)
+    # # choose the time limit for the GRASP algorithm: 20, 30, 60
+    # time_limit_seconds = 10
+    # if len(instance.Requests) <= 20:
+    #     time_limit_seconds = 20
+    # elif len(instance.Requests) <= 30:
+    #     time_limit_seconds = 60
+    # elif len(instance.Requests) >= 40:
+    #     time_limit_seconds = 30    
+
+    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 60)
+
+    # # Run the MIP solver to assign tours to technicians
+    chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, possible_tours, tour_distances)
+
+    # Schedule the tours based on the start days and working days rule
+    schedule = scheduling(instance, chosen_tours)
+
+    # Create a Solution object to store the final schedule
+    solution = Solution(instance.dataset, instance.name)
+    add_schedule_solution(schedule, solution)
+    solution.num_technician_days = num_tours
+    solution.num_technicians_used = num_technicians_used
+    solution.technician_distance = total_distance
+    solution.technician_cost = total_cost
+
+    print('\033[95m' + "*" * 50 + " Final Solution " + "*" * 50 + '\033[0m')
+
+    print(solution)
+
+
+    '''
+    instance 4 only has distance cost for trucks
+    instance 5 only has distance cost for technicians
+    11, 16, 17, 18: higher distance cost 
+    20: 30 sec is fine, took a long time to run
+    13: 60 sec is better
+    11, 12 different time limit return the same solution
+    13, 20: 1 technician is better
+    14, 15: 20 sec is better
+    '''
+
+
 

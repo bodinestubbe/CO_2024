@@ -128,6 +128,13 @@ def initial_technician_tours_GRASP(instance, iterations=50):
 
     return final_tours, final_distances
 
+def neighborhood_search(instance, feasible_tours, time_limit_seconds):
+    # get feasible neighbors  
+
+    return possible_tours, tour_distances 
+
+
+
 def mip_solver(instance, possible_tours, tour_distances):
     model = Model("Person_SPP")
     theta = 0.8
@@ -276,6 +283,10 @@ def scheduling(instance, possible_tours):
         # Retrieve the actual tour (list of requests) from possible_tours
         tour_requests = possible_tours[tech_id][tour_id]
         technician_schedules[tech_id].append((tour_requests, scheduled_day))
+        for request_ID in tour_requests:
+
+            instance.Requests[request_ID-1].dayOfInstallation = scheduled_day
+
 
     # Print the schedule for each technician with full tour details
     print(f"\nSchedule for Each Technician:")
@@ -296,7 +307,7 @@ def add_schedule_solution(schedule, solution):
 
 
 if __name__ == "__main__":
-    instance_path = readInstance.getInstancePath(11)
+    instance_path = readInstance.getInstancePath(1)
     instance = readInstance.readInstance(instance_path)
 
     print('\033[95m' + "*" * 50 + " Solving...... " + "*" * 50 + '\033[0m')
@@ -311,7 +322,7 @@ if __name__ == "__main__":
     # elif len(instance.Requests) >= 40:
     #     time_limit_seconds = 30    
 
-    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 60)
+    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 10)
 
     # # Run the MIP solver to assign tours to technicians
     chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, possible_tours, tour_distances)
@@ -330,6 +341,9 @@ if __name__ == "__main__":
     print('\033[95m' + "*" * 50 + " Final Solution " + "*" * 50 + '\033[0m')
 
     print(solution)
+
+    # for request in range(1, len(instance.Requests)+1):
+    #     print("Request {} installation day: ".format(request),instance.Requests[request-1].dayOfInstallation)
 
 
     '''

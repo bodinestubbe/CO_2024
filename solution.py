@@ -1,3 +1,5 @@
+
+
 class TruckRoute:
     def __init__(self, truck_id, locations):
         self.truck_id = truck_id
@@ -71,3 +73,5 @@ class Solution:
     def write_to_file(self, file_path):
         with open(file_path, "w") as file: 
             file.write(self.__repr__())  # Use the string representation method to get the schedule info
+
+

@@ -3,6 +3,9 @@ from readInstance import *
 # from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
 import numpy as np
 import itertools
+from technicianTourGRASP import *
+
+
 class Truck:
 
     def __init__(self, capacity, max_km):
@@ -95,9 +98,13 @@ def generate_feasible_truck_tour(instance):
         truck.route.insert(len(truck.route)-1, reqID)
         truck.current_load = calculate_truck_load(truck, requests, machines)
         truck.current_km = calculate_truck_distance(truck, requests, distance_matrix)
-        truck.smallestToDate = requests[reqID-1].toDay 
-        truck.largestFromDate = requests[reqID-2].fromDay 
+        truck.smallestToDate = requests[reqID-1].dayOfInstallation-1 #requests[reqID-1].toDay
+        truck.largestFromDate = requests[reqID-1].fromDay 
     
+    for reqID, truck in assigned_trucks.items():
+        print(reqID, truck.largestFromDate, truck.smallestToDate)
+
+       
    
 
     # iterate over the savings dictionary and check if you can merge the requests
@@ -128,18 +135,11 @@ def generate_feasible_truck_tour(instance):
             truck2.current_km = calculate_truck_distance(truck2, requests, distance_matrix)
 
 
-    # for reqid, truck in assigned_trucks.items():
-    #     print(reqid)
-    #     print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
-        
+    
     final_trucks = get_final_trucks(assigned_trucks)
-    for truck in final_trucks:
-        print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+    
     return final_trucks
     
-
-   
-
 
 def get_final_trucks(assigned_trucks):
     final_trucks = []
@@ -164,9 +164,10 @@ def generate_schedule(trucks, instance):
     planning_horizon = range(1, instance.days + 1)
 
     schedule = {day: [] for day in planning_horizon}
-    
+
     #creates a dictionary with on each day which truck/route drives. For the trucks, the day is drive is chosen as
     # the From Date
+
     for truck in trucks:
         #change this - take into account when technician comes and if we do it on different days (spread) might be cheaper
         schedule[truck.largestFromDate].append(truck)
@@ -178,23 +179,32 @@ def generate_schedule(trucks, instance):
     #         print(f"route: {truck.route}")
     return schedule
 
-def get_truck_days(routes):
-def calculate_costs(trucks, distance, instance):
-    distance_costs = distance* instance.
+# def get_truck_days(routes):
 
 
-    #TO DO:  idling costs
-    return None
+# def calculate_costs(distance,  schedule, instance):
+#     #costs for distance
+#     distance_costs = distance* instance.truckDistanceCosts
+
+#     #costs for truck each day
+#     day_costs = len(trucks)*instance.truckDayCosts
+
+#     #costs using truck at all in time horizon (max trucks on any day)
+     
+
+#     #TO DO:  idling costs
+#     return None
 
 # def print_results(trucks, costs, distance):
 
 
 
 instances = get_all_instances(20) #error still for 20
-instance_1= instances[0]
+instance_1 = instances[0]
+
 routes = generate_feasible_truck_tour(instance_1)
 schedule = generate_schedule(routes, instance_1)
 distance = calculate_distance(routes)
 truck_days = get_truck_days(schedule)
-costs = calculate_costs(distance, schedule, instance_1)
+# costs = calculate_costs(distance, schedule, instance_1)
 # distance = calculate_distance(routes, instance_1)

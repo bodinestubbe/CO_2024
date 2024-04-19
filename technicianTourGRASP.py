@@ -305,6 +305,30 @@ def add_schedule_solution(schedule, solution):
             daily_schedule.add_technician_schedule(tech_id, tour_requests)
             solution.add_daily_schedule(daily_schedule)
 
+def return_solution(instance):
+
+
+    #print('\033[95m' + "*" * 50 + " Solving...... " + "*" * 50 + '\033[0m')
+
+    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 10)
+
+    # # Run the MIP solver to assign tours to technicians
+    chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, possible_tours, tour_distances)
+
+    # Schedule the tours based on the start days and working days rule
+    schedule = scheduling(instance, chosen_tours)
+
+    # store solution
+    solution = Solution(instance.dataset, instance.name)
+    add_schedule_solution(schedule, solution)
+    solution.num_technician_days = num_tours
+    solution.num_technicians_used = num_technicians_used
+    solution.technician_distance = total_distance
+    solution.technician_cost = total_cost
+
+    #print('\033[95m' + "*" * 50 + " Final Solution " + "*" * 50 + '\033[0m')
+
+    #print(solution)
 
 if __name__ == "__main__":
     instance_path = readInstance.getInstancePath(1)

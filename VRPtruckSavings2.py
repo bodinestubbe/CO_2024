@@ -1,5 +1,5 @@
 from instances import Instance as Instance
-import readInstance
+from readInstance import *
 # from gurobipy import Model, GRB, quicksum, disposeDefaultEnv
 import numpy as np
 import itertools
@@ -38,32 +38,20 @@ def canMerge(reqID1, truck1, reqID2, truck2, requests, savings):
     if truck1 == truck2:
         return False
     # do all requests in route have overlap in delivery time
-    if hasOverlap(truck1, truck2):
-         # is it in a route
-        # if len(truck2.route) > 3:
-        #     return  False
-    # is it still within capacity
-        # if truck1.current_load + requests[reqID2].amount * requests[reqID2].machine.size > truck1.capacity:
-        if truck1.current_load + truck2.current_load > truck1.capacity:
-            return False
-    # has max km not been surpassed
-        if truck1.current_km + truck2.current_km - savings[(reqID1, reqID2)] > truck1.max_km:
-            return False
-    
-   
+    if hasOverlap(truck1, truck2) and withinCapacity(truck1, truck2) and withinDistance(truck1,truck2, savings, reqID1, reqID2):
+        return True
+    return False
 
-    return True
+def withinDistance(truck1,truck2, savings, reqID1, reqID2):
+    return truck1.current_km + truck2.current_km - savings[(reqID1, reqID2)] <= truck1.max_km
 
+def withinCapacity(truck1,truck2):
+    return truck1.current_load + truck2.current_load <= truck1.capacity
 
 def hasOverlap(truck1, truck2):
     return truck1.smallestToDate >= truck2.largestFromDate and truck2.smallestToDate >= truck1.largestFromDate
 
-### this one has to be fixed: take into account distance from and to depot
-# def calculate_truck_distance(truck, requests, distance_matrix):
-#     distance = 0
-#     for i in range(1, len(truck.route)):
-#         distance += distance_matrix[requests[truck.route[i-1]].customerLocID][requests[truck.route[i]].customerLocID]
-#     return distance #probably wrong
+
 
 def calculate_truck_distance(truck, requests, distance_matrix):
     request_id = truck.route[1]
@@ -92,7 +80,7 @@ def updateDeliveryWindow(truck1, truck2):
 def generate_feasible_truck_tour(instance):
     requests = instance.Requests
     machines = instance.Machines
-    planning_horizon = range(1, instance.days + 1)
+    
     distance_matrix = instance.distances
     savings = generate_savings(instance.Requests, distance_matrix)
     print(savings)
@@ -102,16 +90,15 @@ def generate_feasible_truck_tour(instance):
     assigned_trucks = {request.ID: Truck(instance.truckCapacity, instance.truckMaxDistance) for request in instance.Requests}
     
     
-
     for reqID, truck in assigned_trucks.items():
+        #instantiate trucks and their routes
         truck.route.insert(len(truck.route)-1, reqID)
         truck.current_load = calculate_truck_load(truck, requests, machines)
         truck.current_km = calculate_truck_distance(truck, requests, distance_matrix)
-        truck.smallestToDate = requests[reqID-1].toDay #something goes wrong here
-        truck.largestFromDate = requests[reqID-2].fromDay #or here
+        truck.smallestToDate = requests[reqID-1].toDay 
+        truck.largestFromDate = requests[reqID-2].fromDay 
     
-    for reqid, truck in assigned_trucks.items():
-        print(truck.route, truck.capacity, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+   
 
     # iterate over the savings dictionary and check if you can merge the requests
     for reqIDS, saving in savings.items():
@@ -119,6 +106,7 @@ def generate_feasible_truck_tour(instance):
         reqID2 = reqIDS[1]
         truck1 = assigned_trucks[reqID1]
         truck2 = assigned_trucks[reqID2]
+       
 
         if canMerge(reqID1, truck1, reqID2, truck2, requests, savings):
             # update truck 1
@@ -128,9 +116,9 @@ def generate_feasible_truck_tour(instance):
             # assigned_trucks[reqID2] = truck1 this?
             truck1.current_load = calculate_truck_load(truck1, requests, machines)
             truck1.current_km += truck2.current_km - savings[(reqID1, reqID2)]
-            
             truck1.smallestToDate, truck1.largestFromDate = updateDeliveryWindow(truck1, truck2)
-            assigned_trucks[reqID2] = truck1 #or this
+            assigned_trucks[reqID2] = truck1 
+
             if truck1.current_km > truck1.max_km:
                 print("error, order of requests is wrong, update constraints in can merge")
             
@@ -138,11 +126,75 @@ def generate_feasible_truck_tour(instance):
             truck2.route.remove(reqID2)
             truck2.current_load = calculate_truck_load(truck2, requests, machines)
             truck2.current_km = calculate_truck_distance(truck2, requests, distance_matrix)
-            # assigned_trucks.pop(reqID2) #(could add this line to remove the truck from the dictionary)
 
-    for reqid, truck in assigned_trucks.items():
-        print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+
+    # for reqid, truck in assigned_trucks.items():
+    #     print(reqid)
+    #     print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
         
+    final_trucks = get_final_trucks(assigned_trucks)
+    for truck in final_trucks:
+        print(truck.route, truck.capacity, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
+    return final_trucks
+    
 
-Instance_1 = readInstance.readInstance(readInstance.getInstancePath(20))#error still for 20
-generate_feasible_truck_tour(Instance_1)
+   
+
+
+def get_final_trucks(assigned_trucks):
+    final_trucks = []
+    sorted_truck_routes = []
+    for reqid, truck in assigned_trucks.items():
+        if sorted(truck.route) not in sorted_truck_routes:
+                final_trucks.append(truck)
+                sorted_truck_routes.append(sorted(truck.route))
+    return final_trucks
+
+
+
+
+def calculate_distance(trucks):
+    distance = 0
+
+    for truck in trucks:
+        distance+= truck.current_km
+    return distance
+
+def generate_schedule(trucks, instance):
+    planning_horizon = range(1, instance.days + 1)
+
+    schedule = {day: [] for day in planning_horizon}
+    
+    #creates a dictionary with on each day which truck/route drives. For the trucks, the day is drive is chosen as
+    # the From Date
+    for truck in trucks:
+        #change this - take into account when technician comes and if we do it on different days (spread) might be cheaper
+        schedule[truck.largestFromDate].append(truck)
+
+    # for day, trucks in schedule.items():
+    #     print(f"Day :{day}")
+
+    #     for truck in trucks:
+    #         print(f"route: {truck.route}")
+    return schedule
+
+def get_truck_days(routes):
+def calculate_costs(trucks, distance, instance):
+    distance_costs = distance* instance.
+
+
+    #TO DO:  idling costs
+    return None
+
+# def print_results(trucks, costs, distance):
+
+
+
+instances = get_all_instances(20) #error still for 20
+instance_1= instances[0]
+routes = generate_feasible_truck_tour(instance_1)
+schedule = generate_schedule(routes, instance_1)
+distance = calculate_distance(routes)
+truck_days = get_truck_days(schedule)
+costs = calculate_costs(distance, schedule, instance_1)
+# distance = calculate_distance(routes, instance_1)

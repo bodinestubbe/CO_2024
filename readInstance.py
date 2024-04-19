@@ -129,3 +129,13 @@ if __name__ == "__main__":
     
     for i in setOfInstances:
          i.__repr__()
+
+def get_all_instances(number_of_instances):
+    set_of_instances = []
+    
+    for i in range(1,number_of_instances+1):
+        instance_path = getInstancePath(i)
+        print(instance_path)
+        set_of_instances.append(readInstance(instance_path))
+
+    return set_of_instances

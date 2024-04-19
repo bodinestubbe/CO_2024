@@ -137,6 +137,9 @@ def generate_feasible_truck_tour(instance):
 
     
     final_trucks = get_final_trucks(assigned_trucks)
+
+    for truck in final_trucks:
+        print(truck.route, truck.current_km, truck.current_load, truck.largestFromDate, truck.smallestToDate)
     
     return final_trucks
     
@@ -201,10 +204,10 @@ def generate_schedule(trucks, instance):
 
 instances = get_all_instances(20) #error still for 20
 instance_1 = instances[0]
-
+return_solution = return_solution(instance_1)
 routes = generate_feasible_truck_tour(instance_1)
 schedule = generate_schedule(routes, instance_1)
 distance = calculate_distance(routes)
-truck_days = get_truck_days(schedule)
+# truck_days = get_truck_days(schedule)
 # costs = calculate_costs(distance, schedule, instance_1)
 # distance = calculate_distance(routes, instance_1)

@@ -62,14 +62,17 @@ class Solution:
         sorted_schedules = sorted(self.daily_schedules, key=lambda x: x.day)
         return (f"DATASET = {self.dataset}\n" +
                 f"NAME = {self.name}\n\n" +
-                # f"TRUCK_DISTANCE = {self.truck_distance}\n" +
-                # f"NUMBER_OF_TRUCK_DAYS = {self.num_truck_days}\n" +
-                # f"NUMBER_OF_TRUCKS_USED = {self.num_trucks_used}\n" +
-                # f"TECHNICIAN_DISTANCE = {self.technician_distance}\n" +
-                # f"NUMBER_OF_TECHNICIAN_DAYS = {self.num_technician_days}\n" +
-                # f"NUMBER_OF_TECHNICIANS_USED = {self.num_technicians_used}\n" +
-                # f"IDLE_MACHINE_COSTS = {self.idle_machine_costs}\n" +
-                # f"TOTAL_COST = {self.idle_machine_costs + self.technician_cost + self.truck_cost}\n\n" +
+                f"TRUCK_DISTANCE = {self.truck_distance}\n" +
+                f"NUMBER_OF_TRUCK_DAYS = {self.num_truck_days}\n" +
+                f"NUMBER_OF_TRUCKS_USED = {self.num_trucks_used}\n" +
+                f"TECHNICIAN_DISTANCE = {self.technician_distance}\n" +
+                f"NUMBER_OF_TECHNICIAN_DAYS = {self.num_technician_days}\n" +
+                f"NUMBER_OF_TECHNICIANS_USED = {self.num_technicians_used}\n" +
+                f"IDLE_MACHINE_COSTS = {self.idle_machine_costs}\n" +
+                f"TRUCK_COST = {self.truck_cost}\n" +
+                f"TECHNICIAN_COST = {self.technician_cost}\n" +
+                f"TOTAL_COST = {self.idle_machine_costs + self.technician_cost + self.truck_cost}\n\n" +
+                # comment out the above line, I use it to check the cost
                 "\n\n".join(repr(ds) for ds in sorted_schedules)
                 )
     

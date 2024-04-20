@@ -15,7 +15,7 @@ def get_solution_file_path(instance):
 
 if __name__ == "__main__":
 
-    instances = get_all_instances(1)
+    instances = get_all_instances(20)
     
     for instance in instances:
         

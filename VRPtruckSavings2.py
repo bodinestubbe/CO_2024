@@ -208,7 +208,7 @@ def update_delivery_day(delivery_day, truck, instance):
 
 
 
-def calculate_costs(schedule, instance):
+def calculate_costs(schedule, instance, solution):
     #costs for distance
     distance_costs = total_distance(schedule)* instance.truckDistanceCost
 
@@ -222,6 +222,8 @@ def calculate_costs(schedule, instance):
     for request in instance.Requests:
         idling_cost += (request.dayOfInstallation - request.deliveryDay -1)*request.amount*instance.Machines[request.machineID-1].idlePenalty
     
+    solution.idle_machine_costs = idling_cost
+
     return distance_costs + day_costs + truck_cost+ idling_cost
 
 
@@ -264,7 +266,7 @@ def return_final_solution(instance):
     solution.num_truck_days = num_truck_days(schedule)
     solution.num_truck_used = num_truck_used(schedule)
     solution.truck_distance = total_distance(schedule)
-    solution.truck_cost = calculate_costs(schedule, instance)
+    solution.truck_cost = calculate_costs(schedule, instance, solution)
 
     return solution
 

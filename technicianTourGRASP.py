@@ -133,8 +133,6 @@ def neighborhood_search(instance, feasible_tours, time_limit_seconds):
 
     return possible_tours, tour_distances 
 
-
-
 def mip_solver(instance, possible_tours, tour_distances):
     model = Model("Person_SPP")
     theta = 0.8
@@ -234,81 +232,121 @@ def sort_tours_by_start_day(instance, possible_tours):
 
     return sorted_tour_keys, earliest_start_days
 
-def working_days_rule(sorted_tour_keys, earliest_start_days):
-    # will adjust this later
-    # Initialize the starting day for scheduling
+def schedule_onward(sorted_tour_keys, earliest_start_days, instance):
     current_day = 1
     scheduled_days = {}
+    last_scheduled_day = {}
 
-    # Iterate through each tour based on the sorted order
+    # Determine whether to apply the day off rule
+    apply_day_off_rule = instance.days > 10
+
     for key in sorted_tour_keys:
         tech_id, tour_id = key
-        # Retrieve the earliest start day for the current tour
         earliest_start = earliest_start_days[key]
-        
+
         # Ensure the scheduling starts at least on the earliest allowable start day
-        if current_day < earliest_start:
-            current_day = earliest_start
-        
-        # Find the next valid start day according to the 4 days on, 1 day off pattern
-        # Adjust current_day if it falls on a rest day
-        if (current_day - 1) % 5 == 4:  # Check if the current day is a rest day
-            current_day += 1  # Skip the rest day
+        start_day = max(current_day, earliest_start, last_scheduled_day.get(tech_id, 0) + 1)
+
+        # Skip rest days if the rule applies
+        if apply_day_off_rule:
+            while (start_day - 1) % 5 == 4:
+                start_day += 1
+
+        # Check if the start day exceeds the instance days
+        if start_day > instance.days:
+            continue  # If no other day is available, skip to the next tour
 
         # Assign the start day for the current tour
-        scheduled_days[key] = current_day
-        
-        # Increment the day for the next possible scheduling
-        current_day += 1
-        
-        # Automatically adjust for the next cycle's rest day if needed
-        if (current_day - 1) % 5 == 4:  # If the next day is a rest day, skip it
-            current_day += 1
+        scheduled_days[key] = start_day
+        last_scheduled_day[tech_id] = start_day  # Track last scheduled day for each technician
+
+        # Update current_day to the next day after the last scheduled day across all technicians
+        if start_day == current_day:
+            current_day = max(last_scheduled_day.values()) + 1
+            if apply_day_off_rule and (current_day - 1) % 5 == 4:  # Skip rest day if the rule applies
+                current_day += 1
 
     return scheduled_days
+def schedule_backward(sorted_tour_keys, earliest_start_days, instance):
+    scheduled_days = {}
+    current_day = instance.days
+
+    # Determine whether to apply the day off rule
+    apply_day_off_rule = instance.days != 5
+
+    for key in sorted(sorted_tour_keys, key=lambda x: earliest_start_days[x], reverse=True):
+        tech_id, tour_id = key
+        earliest_start = earliest_start_days[key]
+
+        found_day = False
+        while current_day >= earliest_start:
+            if apply_day_off_rule and (current_day - 1) % 5 == 4:  # Skip rest day if the rule applies
+                current_day -= 1
+            else:
+                scheduled_days[key] = current_day  # Schedule the tour
+                found_day = True
+                break  # Break the loop after scheduling
+
+        if found_day:
+            current_day = scheduled_days[key] - 1
+        else:
+            current_day -= 1  # Continue with the next lowest day
+
+        if current_day < 1:  # Prevent current_day from going below 1
+            break
+
+    return scheduled_days
+
 def scheduling(instance, possible_tours):
-
     sorted_tour_keys, earliest_start_days = sort_tours_by_start_day(instance, possible_tours)
-    scheduled_days = working_days_rule(sorted_tour_keys, earliest_start_days)
- 
-    # Create a dictionary to store schedules by technician
-    technician_schedules = {}
 
-    # Populate the technician schedules from the scheduled days information
+    if instance.truckCost < 100000:
+        scheduled_days = schedule_onward(sorted_tour_keys, earliest_start_days, instance)
+    else:
+        scheduled_days = schedule_backward(sorted_tour_keys, earliest_start_days, instance)
+
+    all_tours = {}  # Redefine all_tours as a nested dictionary
+
+    # Populate all_tours with structured data
     for key in sorted_tour_keys:
         tech_id, tour_id = key
-        scheduled_day = scheduled_days[key]
-        if tech_id not in technician_schedules:
-            technician_schedules[tech_id] = []
-        # Retrieve the actual tour (list of requests) from possible_tours
-        tour_requests = possible_tours[tech_id][tour_id]
-        technician_schedules[tech_id].append((tour_requests, scheduled_day))
-        for request_ID in tour_requests:
+        if key in scheduled_days:
+            scheduled_day = scheduled_days[key]
+            tour_requests = possible_tours[tech_id][tour_id]
+            if scheduled_day not in all_tours:
+                all_tours[scheduled_day] = {}
+            if tech_id not in all_tours[scheduled_day]:
+                all_tours[scheduled_day][tech_id] = {}
+            all_tours[scheduled_day][tech_id][tour_id] = tour_requests
 
-            instance.Requests[request_ID-1].dayOfInstallation = scheduled_day
+            # Update day of installation for requests
+            for request_ID in tour_requests:
+                instance.Requests[request_ID - 1].dayOfInstallation = scheduled_day
 
+    # Print the schedule in the desired structured format
+    print('\033[95m' + "*" * 70 + '\033[0m')
+    for day, techs in all_tours.items():
+        print(f"Day {day}")
+        for tech_id, tours in techs.items():
+            print(f"  Technician {tech_id}:")
+            for tour_id, requests in tours.items():
+                print(f"    Tour {tour_id}: {requests}")
 
-    # Print the schedule for each technician with full tour details
-    print(f"\nSchedule for Each Technician:")
-    for tech_id, schedules in technician_schedules.items():
-        print(f"Technician {tech_id}:")
-        for tour_requests, day in sorted(schedules, key=lambda x: x[1]):  # Sort by day for better readability
-            print(f"  Day {day}: {tour_requests}")
-    
-    return technician_schedules
+    return all_tours
 
 def add_schedule_solution(schedule, solution):
 
-    for tech_id, schedules in schedule.items():
-        for tour_requests, day in sorted(schedules, key=lambda x: x[1]): 
-            daily_schedule = DailySchedule(day)
-            daily_schedule.add_technician_schedule(tech_id, tour_requests)
-            solution.add_daily_schedule(daily_schedule)
+    for day, techs in schedule.items():
+      daily_schedule = DailySchedule(day)
+      for tech_id, tours in techs.items():
+          for tour_id, tour_requests in tours.items():
+              daily_schedule.add_technician_schedule(tech_id, tour_requests)
+      solution.add_daily_schedule(daily_schedule)
 
 def return_solution(instance):
 
+    print(f'\033[95m' + "*" * 30 + " Solving " + instance.name + "*" * 30 + '\033[0m')
 
-    #print('\033[95m' + "*" * 50 + " Solving...... " + "*" * 50 + '\033[0m')
 
     possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 10)
 
@@ -332,20 +370,10 @@ def return_solution(instance):
     return solution
 
 if __name__ == "__main__":
-    instance_path = readInstance.getInstancePath(1)
+    instance_path = readInstance.getInstancePath(6)
     instance = readInstance.readInstance(instance_path)
 
     print('\033[95m' + "*" * 50 + " Solving...... " + "*" * 50 + '\033[0m')
-
-
-    # # choose the time limit for the GRASP algorithm: 20, 30, 60
-    # time_limit_seconds = 10
-    # if len(instance.Requests) <= 20:
-    #     time_limit_seconds = 20
-    # elif len(instance.Requests) <= 30:
-    #     time_limit_seconds = 60
-    # elif len(instance.Requests) >= 40:
-    #     time_limit_seconds = 30    
 
     possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 10)
 

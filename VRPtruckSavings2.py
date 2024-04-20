@@ -226,7 +226,7 @@ def get_number_of_trucks(schedule):
 
 instances = get_all_instances(20) #error still for 20
 instance_1 = instances[0]
-return_solution = return_solution(instance_1)
+technician_solution = return_solution(instance_1)
 routes = generate_feasible_truck_tour(instance_1)
 schedule = generate_schedule(routes, instance_1)
 costs = calculate_costs(schedule, instance_1)

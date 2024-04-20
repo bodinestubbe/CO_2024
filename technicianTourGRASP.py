@@ -329,6 +329,7 @@ def return_solution(instance):
     #print('\033[95m' + "*" * 50 + " Final Solution " + "*" * 50 + '\033[0m')
 
     #print(solution)
+    return solution
 
 if __name__ == "__main__":
     instance_path = readInstance.getInstancePath(1)

@@ -17,6 +17,7 @@ class Truck:
         self.largestFromDate = 0
         self.smallestToDate = 0
         self.deliveryDay = 0
+        self.ID = 0
 
 
 def generate_savings(requests, distances):
@@ -168,46 +169,71 @@ def generate_schedule(trucks, instance):
 
     schedule = {day: [] for day in planning_horizon}
 
-    #creates a dictionary with on each day which truck/route drives. For the trucks, the day is drive is chosen as
-    # the From Date
+    #creates a dictionary with on each day which truck/route drives
 
     for truck in trucks:
-        #change this - take into account when technician comes and if we do it on different days (spread) might be cheaper
-        schedule[truck.largestFromDate].append(truck)
+        #choose delivery window:
+        # check 1: only deliverable on 1 day - choose that day
+        if truck.largestFromDate == truck.smallestToDate:
+            delivery_day = truck.largestFromDate
+            schedule[delivery_day].append(truck)
+            truck.ID = len(schedule[delivery_day])
+            #for each request in this truck that is not 0 then request[requestID-1].deliveryDay = truck.largestFromDAte
+            update_delivery_day(delivery_day,truck, instance)
+        else: #minimizing idling cost
+            delivery_day = truck.smallestToDate
+            schedule[delivery_day].append(truck)
+            truck.ID = len(schedule[delivery_day])
+            update_delivery_day(delivery_day,truck, instance)
+        # T ODO: eliverable on mutiple days:
+          # if day cost > truck cost:
+                # put it all on same day
+            # if day cost < truck cost:
+                # spread it out
+        #minimize idling cost
 
-    # for day, trucks in schedule.items():
-    #     print(f"Day :{day}")
-
-    #     for truck in trucks:
-    #         print(f"route: {truck.route}")
+    
+    #print
     return schedule
 
-# def get_truck_days(routes):
+def update_delivery_day(delivery_day, truck, instance):
+    for reqID in truck.route:
+        if reqID != 0:
+            instance.Requests[reqID-1].deliveryDay = delivery_day
 
 
-# def calculate_costs(distance,  schedule, instance):
-#     #costs for distance
-#     distance_costs = distance* instance.truckDistanceCosts
 
-#     #costs for truck each day
-#     day_costs = len(trucks)*instance.truckDayCosts
+def calculate_costs(schedule, instance):
+    #costs for distance
+    distance_costs = sum([sum([truck.current_km for truck in trucks]) for day,trucks in schedule.items()])* instance.truckDistanceCost
 
-#     #costs using truck at all in time horizon (max trucks on any day)
-     
+    #costs for truck each day
+    day_costs = sum([len(trucks) for day,trucks in schedule.items()])*instance.truckDayCost
 
-#     #TO DO:  idling costs
-#     return None
+    #costs using truck at all in time horizon (max trucks on any day)
+    truck_cost = max([len(trucks) for day,trucks in schedule.items()])*instance.truckCost
+
+    idling_cost = 0
+    for request in instance.Requests:
+        idling_cost += (request.dayOfInstallation - request.deliveryDay -1)*request.amount*instance.Machines[request.machineID-1].idlePenalty
+    #TO DO:  idling costs
+    return distance_costs + day_costs + truck_cost+ idling_cost
 
 # def print_results(trucks, costs, distance):
 
-
+def get_number_of_trucks(schedule):
+    return 0
 
 instances = get_all_instances(20) #error still for 20
 instance_1 = instances[0]
 return_solution = return_solution(instance_1)
 routes = generate_feasible_truck_tour(instance_1)
 schedule = generate_schedule(routes, instance_1)
-distance = calculate_distance(routes)
+costs = calculate_costs(schedule, instance_1)
+
+
+print(schedule)
+print(f"Costs are{costs}")
 # truck_days = get_truck_days(schedule)
-# costs = calculate_costs(distance, schedule, instance_1)
+# 
 # distance = calculate_distance(routes, instance_1)

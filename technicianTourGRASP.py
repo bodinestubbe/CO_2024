@@ -319,7 +319,7 @@ def return_solution(instance):
     schedule = scheduling(instance, chosen_tours)
 
     # store solution
-    solution = Solution(instance.dataset, instance.name)
+    solution = Solution(instance.dataset, instance.name, instance.days)
     add_schedule_solution(schedule, solution)
     solution.num_technician_days = num_tours
     solution.num_technicians_used = num_technicians_used
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     schedule = scheduling(instance, chosen_tours)
 
     # Create a Solution object to store the final schedule
-    solution = Solution(instance.dataset, instance.name)
+    solution = Solution(instance.dataset, instance.name, instance.days)
     add_schedule_solution(schedule, solution)
     solution.num_technician_days = num_tours
     solution.num_technicians_used = num_technicians_used

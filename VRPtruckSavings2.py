@@ -149,9 +149,12 @@ def get_final_trucks(assigned_trucks):
     final_trucks = []
     sorted_truck_routes = []
     for reqid, truck in assigned_trucks.items():
+        # truck.route = truck.route[1:-1]
         if sorted(truck.route) not in sorted_truck_routes:
                 final_trucks.append(truck)
                 sorted_truck_routes.append(sorted(truck.route))
+
+    
     return final_trucks
 
 
@@ -174,17 +177,19 @@ def generate_schedule(trucks, instance):
     for truck in trucks:
         #choose delivery window:
         # check 1: only deliverable on 1 day - choose that day
+
         if truck.largestFromDate == truck.smallestToDate:
             delivery_day = truck.largestFromDate
             schedule[delivery_day].append(truck)
             truck.ID = len(schedule[delivery_day])
-            #for each request in this truck that is not 0 then request[requestID-1].deliveryDay = truck.largestFromDAte
             update_delivery_day(delivery_day,truck, instance)
+
         else: #minimizing idling cost
             delivery_day = truck.smallestToDate
             schedule[delivery_day].append(truck)
             truck.ID = len(schedule[delivery_day])
             update_delivery_day(delivery_day,truck, instance)
+
         # T ODO: eliverable on mutiple days:
           # if day cost > truck cost:
                 # put it all on same day
@@ -199,19 +204,19 @@ def generate_schedule(trucks, instance):
 def update_delivery_day(delivery_day, truck, instance):
     for reqID in truck.route:
         if reqID != 0:
-            instance.Requests[reqID-1].deliveryDay = delivery_day
+            instance.Requests[reqID-1].deliveryDay = truck.delivery_day = delivery_day
 
 
 
 def calculate_costs(schedule, instance):
     #costs for distance
-    distance_costs = sum([sum([truck.current_km for truck in trucks]) for day,trucks in schedule.items()])* instance.truckDistanceCost
+    distance_costs = total_distance(schedule)* instance.truckDistanceCost
 
     #costs for truck each day
-    day_costs = sum([len(trucks) for day,trucks in schedule.items()])*instance.truckDayCost
+    day_costs = num_truck_days(schedule)*instance.truckDayCost
 
     #costs using truck at all in time horizon (max trucks on any day)
-    truck_cost = max([len(trucks) for day,trucks in schedule.items()])*instance.truckCost
+    truck_cost = num_truck_used(schedule)*instance.truckCost
 
     idling_cost = 0
     for request in instance.Requests:
@@ -219,21 +224,49 @@ def calculate_costs(schedule, instance):
     #TO DO:  idling costs
     return distance_costs + day_costs + truck_cost+ idling_cost
 
-# def print_results(trucks, costs, distance):
 
-def get_number_of_trucks(schedule):
-    return 0
+
+def add_schedule_solution(schedule, solution):
+    
+    for day, trucks in schedule.items():
+        if len(trucks) != 0:
+            for truck in trucks:
+                
+                        print("I am stuck")
+                        
+                        daily_schedule = solution.daily_schedules[day-1]
+                        print(daily_schedule.day)
+                        daily_schedule.add_truck_route(truck.ID, truck.route)
+                        print(truck.deliveryDay, truck.route)
+                        solution.add_daily_schedule(daily_schedule)
+
+
+def total_distance(schedule):
+    return  sum([sum([truck.current_km for truck in trucks]) for day,trucks in schedule.items()])
+
+def num_truck_used(schedule):
+    return max([len(trucks) for days, trucks in schedule.items()])
+
+def num_truck_days(schedule):
+    return sum([len(trucks) for days, trucks in schedule.items()])
 
 instances = get_all_instances(20) #error still for 20
 instance_1 = instances[0]
 technician_solution = return_solution(instance_1)
 routes = generate_feasible_truck_tour(instance_1)
 schedule = generate_schedule(routes, instance_1)
-costs = calculate_costs(schedule, instance_1)
 
 
-print(schedule)
-print(f"Costs are{costs}")
+# store solution
+
+add_schedule_solution(schedule, technician_solution)
+technician_solution.num_truck_days = num_truck_days(schedule)
+technician_solution.num_truck_used = num_truck_used(schedule)
+technician_solution.technician_distance = total_distance(schedule)
+technician_solution.technician_cost = calculate_costs(schedule, instance_1)
+
+
+print(technician_solution.__repr__)
 # truck_days = get_truck_days(schedule)
 # 
 # distance = calculate_distance(routes, instance_1)

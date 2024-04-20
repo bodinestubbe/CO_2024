@@ -38,7 +38,7 @@ class DailySchedule:
                 f"{tech_info}")
 
 class Solution:
-    def __init__(self, dataset, name):
+    def __init__(self, dataset, name, days):
         self.dataset = dataset
         self.name = name
         self.truck_distance = 0
@@ -51,10 +51,10 @@ class Solution:
         self.technician_cost = 0
         self.truck_cost = 0
         self.total_cost = 0
-        self.daily_schedules = []
+        self.daily_schedules = [DailySchedule(day) for day in range(1,days+1)]
 
     def add_daily_schedule(self, daily_schedule):
-        self.daily_schedules.append(daily_schedule)
+        self.daily_schedules[daily_schedule.day-1] = daily_schedule
 
     def __repr__(self):
         sorted_schedules = sorted(self.daily_schedules, key=lambda x: x.day)
@@ -67,7 +67,7 @@ class Solution:
                 # f"NUMBER_OF_TECHNICIAN_DAYS = {self.num_technician_days}\n" +
                 # f"NUMBER_OF_TECHNICIANS_USED = {self.num_technicians_used}\n" +
                 # f"IDLE_MACHINE_COSTS = {self.idle_machine_costs}\n" +
-                # f"TOTAL_COST = {self.idle_machine_costs + self.technician_cost + self.truck_cost}\n\n" +
+                f"TOTAL_COST = {self.idle_machine_costs + self.technician_cost + self.truck_cost}\n\n" +
                 "\n\n".join(repr(ds) for ds in sorted_schedules)
                 )
     

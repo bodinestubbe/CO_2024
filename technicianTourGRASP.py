@@ -233,7 +233,7 @@ def schedule_tours_from_last_day(sorted_tour_keys, earliest_start_days, days_in_
     working_streak = {tech_id: 0 for tech_id, _ in sorted_tour_keys}
     scheduled_days = {tech_id: [] for tech_id, _ in sorted_tour_keys}  # Track all scheduled days for each tech
     day_occupancy = {day: 0 for day in range(1, days_in_horizon + 1)}
-    unscheduled_tours = []  # To keep track of unscheduled tours
+    all_successfully_scheduled = True
 
     # Start scheduling from the last day backwards
     for tech_id, tour_id in sorted_tour_keys:
@@ -283,10 +283,10 @@ def schedule_tours_from_last_day(sorted_tour_keys, earliest_start_days, days_in_
                 attempt_day += 1
 
         if not successfully_scheduled:
-            unscheduled_tours.append((tech_id, tour_id))
+            all_successfully_scheduled = False
             print(f"Failed to schedule Tour {tour_id} for Technician {tech_id}.")
 
-    return schedule, successfully_scheduled if successfully_scheduled else unscheduled_tours, successfully_scheduled
+    return schedule, all_successfully_scheduled
 
 def can_schedule_tech(tech_id, day, working_streak, scheduled_days, horizon):
     # Check if scheduling on this day would violate the 4-day work rule
@@ -343,7 +343,7 @@ def return_solution(instance):
     print(f'\033[95m' + "*" * 30 + " Solving " + instance.name + "*" * 30 + '\033[0m')
 
 
-    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 10)
+    possible_tours, tour_distances = initial_technician_tours_GRASP2(instance, 20)
 
     # # Run the MIP solver to assign tours to technicians
     chosen_tours, total_distance, total_cost, num_technicians_used, num_tours = mip_solver(instance, possible_tours, tour_distances)

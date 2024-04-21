@@ -270,7 +270,9 @@ def return_final_solution(instance):
 
     return solution
 
-
+instances = get_all_instances(20) #error still for 20
+instance_1 = instances[19]
+return_final_solution(instance_1 )
 
 # truck_days = get_truck_days(schedule)
 # 

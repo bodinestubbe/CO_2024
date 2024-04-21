@@ -322,7 +322,7 @@ def scheduling(instance, possible_tours):
             # Update day of installation for requests
             for request_ID in tour_requests:
                 instance.Requests[request_ID - 1].dayOfInstallation = scheduled_day
-
+                print(f"the scheduled_day = {scheduled_day}")
     # Print the schedule in the desired structured format
     print('\033[95m' + "*" * 70 + '\033[0m')
     for day, techs in all_tours.items():

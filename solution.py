@@ -69,8 +69,8 @@ class Solution:
                 f"NUMBER_OF_TECHNICIAN_DAYS = {self.num_technician_days}\n" +
                 f"NUMBER_OF_TECHNICIANS_USED = {self.num_technicians_used}\n" +
                 f"IDLE_MACHINE_COSTS = {self.idle_machine_costs}\n" +
-                f"TRUCK_COST = {self.truck_cost}\n" +
-                f"TECHNICIAN_COST = {self.technician_cost}\n" +
+                # f"TRUCK_COST = {self.truck_cost}\n" +
+                # f"TECHNICIAN_COST = {self.technician_cost}\n" +
                 f"TOTAL_COST = {self.idle_machine_costs + self.technician_cost + self.truck_cost}\n\n" +
                 # comment out the above line, I use it to check the cost
                 "\n\n".join(repr(ds) for ds in sorted_schedules)

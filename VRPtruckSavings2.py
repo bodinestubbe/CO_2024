@@ -99,7 +99,7 @@ def generate_feasible_truck_tour(instance):
         truck.route.insert(len(truck.route)-1, reqID)
         truck.current_load = calculate_truck_load(truck, requests, machines)
         truck.current_km = calculate_truck_distance(truck, requests, distance_matrix)
-        truck.smallestToDate = requests[reqID-1].dayOfInstallation-1 #requests[reqID-1].toDay
+        truck.smallestToDate = min(requests[reqID-1].dayOfInstallation-1, requests[reqID-1].toDay)
         truck.largestFromDate = requests[reqID-1].fromDay 
     
     for reqID, truck in assigned_trucks.items():
@@ -120,7 +120,8 @@ def generate_feasible_truck_tour(instance):
             # update truck 1
 
             index = truck1.route.index(reqID1)
-            truck1.route.insert(index + 1, reqID2)
+            #truck1.route.insert(index + 1, reqID2) this might not be correct version 21/04/2024 this is where instance 17 didn't work
+            truck1.route.insert(-1, reqID2)
             # assigned_trucks[reqID2] = truck1 this?
             truck1.current_load = calculate_truck_load(truck1, requests, machines)
             truck1.current_km += truck2.current_km - savings[(reqID1, reqID2)]
@@ -135,7 +136,8 @@ def generate_feasible_truck_tour(instance):
             truck2.current_load = calculate_truck_load(truck2, requests, machines)
             truck2.current_km = calculate_truck_distance(truck2, requests, distance_matrix)
 
-
+            print(f"truck 1:route {truck1.route}")
+            print(f"truck 2:route {truck2.route}")
     
     final_trucks = get_final_trucks(assigned_trucks)
 
@@ -224,7 +226,7 @@ def calculate_costs(schedule, instance, solution):
     
     solution.idle_machine_costs = idling_cost
 
-    return distance_costs + day_costs + truck_cost+ idling_cost
+    return distance_costs + day_costs + truck_cost
 
 
 
@@ -247,6 +249,7 @@ def total_distance(schedule):
     return  sum([sum([truck.current_km for truck in trucks]) for day,trucks in schedule.items()])
 
 def num_truck_used(schedule):
+    
     return max([len(trucks) for days, trucks in schedule.items()])
 
 def num_truck_days(schedule):
@@ -264,14 +267,14 @@ def return_final_solution(instance):
 
     add_schedule_solution(schedule, solution)
     solution.num_truck_days = num_truck_days(schedule)
-    solution.num_truck_used = num_truck_used(schedule)
+    solution.num_trucks_used = num_truck_used(schedule)
     solution.truck_distance = total_distance(schedule)
     solution.truck_cost = calculate_costs(schedule, instance, solution)
 
     return solution
 
 instances = get_all_instances(20) #error still for 20
-instance_1 = instances[19]
+instance_1 = instances[16]
 return_final_solution(instance_1 )
 
 # truck_days = get_truck_days(schedule)

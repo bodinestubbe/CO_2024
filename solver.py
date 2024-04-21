@@ -19,8 +19,8 @@ if __name__ == "__main__":
     instances = get_all_instances(20)
     
     # for instance in instances:
-    # for instance in instances[15]:
-    instance = instances[19]
+    # # for instance in instances[15]:
+    instance = instances[16]
         
     solution = return_final_solution(instance) # VRP savings solution
     solution.write_to_file(get_solution_file_path(instance))

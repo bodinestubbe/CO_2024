@@ -371,9 +371,17 @@ def search(instance, latest_delivery_days, iterations=4):
 
 def naive_assign_truck(instance, latest_delivery_days):
     schedule = {}
-
     truck_id_counters = {}
+    total_idle_cost = 0
 
+    # Precompute installation days and idle costs for each request
+    install_days = [instance.Requests[i].dayOfInstallation for i in range(len(instance.Requests))]
+    daily_idle_costs_by_request = [
+        instance.Machines[instance.Requests[i].machineID - 1].idlePenalty * instance.Requests[i].amount 
+        for i in range(len(instance.Requests))
+    ]
+
+    # Iterate over each request in the instance
     for i in range(len(instance.Requests)):
         request = instance.Requests[i]
         exact_delivery_day = latest_delivery_days[request.ID - 1] 
@@ -381,20 +389,22 @@ def naive_assign_truck(instance, latest_delivery_days):
         # Initialize the day in the schedule if not already present
         if exact_delivery_day not in schedule:
             schedule[exact_delivery_day] = {}
-            truck_id_counters[exact_delivery_day] = 1  # Initialize truck counter for this day
+            truck_id_counters[exact_delivery_day] = 1  
 
-        # Get a unique truck ID for the new truck on this day
         truck_id = truck_id_counters[exact_delivery_day]
-        truck_id_counters[exact_delivery_day] += 1  
+        truck_id_counters[exact_delivery_day] += 1
 
-        # Create a new truck for this request and add the request as a route
         if truck_id not in schedule[exact_delivery_day]:
             schedule[exact_delivery_day][truck_id] = []
 
         schedule[exact_delivery_day][truck_id].append(request.ID)
+        
+        idle_days = max(0, install_days[i] - exact_delivery_day - 1)  
+        total_idle_cost += daily_idle_costs_by_request[i] * idle_days
 
-    return schedule
+    number_of_routes = sum(len(trucks) for trucks in schedule.values())
 
+    return schedule, number_of_routes, total_idle_cost
 
 def return_truck_gurobi_solution(instance):
 

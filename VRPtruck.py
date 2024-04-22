@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
+import requests
 from matplotlib import pyplot as plt
 from gurobipy import *
 import readInstance
 import instances
 import os
-#new version
+
+
 def solve_vrptw(instance):
     # Constants
     truck_distance_cost = instance.truckDistanceCost
@@ -13,7 +15,9 @@ def solve_vrptw(instance):
     truck_cost = instance.truckCost
     truck_capacity = instance.truckCapacity
     T = instance.days
-    N = len(instance.Locations)
+    N = len(instances.Request)
+    
+
 
     # Initialize model
     m = Model("VRPTW")
@@ -84,13 +88,28 @@ def solve_vrptw(instance):
 
     return solution_x, num_trucks_used
 
+def print_routes(solution_x, instance):
+    N, _, T = solution_x.shape
+    for t in range(T):
+        print(f"Routes for Day {t + 1}:")
+        for i in range(N):
+            route = []
+            for j in range(N):
+                if solution_x[i, j, t] > 0:
+                    route.append(j)
+            if len(route) > 0:
+                print(f"Truck {i}: Depot -> {', '.join(map(str, route))} -> Depot")
+        print()
+
+
 if __name__ == "__main__":
     # Read instance
-    instance = readInstance.readInstance(readInstance.getInstancePath(20))
+    instance = readInstance.readInstance(readInstance.getInstancePath(1))
 
     # Solve VRPTW
     solution_x, num_trucks_used = solve_vrptw(instance)
     print("Number of trucks used:", num_trucks_used)
+    print_routes(solution_x, instance)
 
     # Plot tours
     def plot_tours(solution_x, instance):

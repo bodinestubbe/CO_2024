@@ -192,13 +192,20 @@ def generate_schedule(trucks, instance):
             truck.ID = len(schedule[delivery_day])
             update_delivery_day(delivery_day,truck, instance)
 
-        # T ODO: eliverable on mutiple days:
-          # if day cost > truck cost:
-                # put it all on same day
-            # if day cost < truck cost:
-                # spread it out
-        #minimize idling cost
-
+        # # T ODO: eliverable on mutiple days:
+        # else:# if day cost > truck cost:
+        #     candidate_days = range(truck.largestFromDate, truck.smallestToDate+1)
+        #     if instance.truckDayCost > instance.truckCost:  # put it all on same day
+        #         max_trucks, delivery_day = max((len(schedule[day],day) for day in candidate_days))
+        #     else:
+        #         min_trucks, delivery_day = min((len(schedule[day],day) for day in candidate_days))
+        #     # if day cost < truck cost:
+        #         # spread it out
+               
+        # #minimize idling cost
+        #     schedule[delivery_day].append(truck)
+        #     truck.ID = len(schedule[delivery_day])
+        #     update_delivery_day(delivery_day, truck, schedule)
     
     #print
     return schedule
@@ -274,7 +281,7 @@ def return_final_solution(instance):
     return solution
 
 instances = get_all_instances(20) #error still for 20
-instance_1 = instances[16]
+instance_1 = instances[19]
 return_final_solution(instance_1 )
 
 # truck_days = get_truck_days(schedule)

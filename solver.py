@@ -18,12 +18,12 @@ if __name__ == "__main__":
 
     instances = get_all_instances(20)
     
-    # for instance in instances:
+    for instance in instances:
     # # for instance in instances[15]:
-    instance = instances[16]
+    # instance = instances[3]
         
-    #solution = return_final_solution(instance) # VRP savings solution
+        solution = return_final_solution(instance) # VRP savings solution
 
     # stored solution in 0421 solution folder
-    solution = return_truck_gurobi_solution(instance) # VRP GRASP solution
-    solution.write_to_file(get_solution_file_path(instance))
+    # solution = return_truck_gurobi_solution(instance) # VRP GRASP solution
+        solution.write_to_file(get_solution_file_path(instance))

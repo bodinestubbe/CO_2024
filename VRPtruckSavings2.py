@@ -196,16 +196,16 @@ def generate_schedule(trucks, instance):
         # else:# if day cost > truck cost:
         #     candidate_days = range(truck.largestFromDate, truck.smallestToDate+1)
         #     if instance.truckDayCost > instance.truckCost:  # put it all on same day
-        #         max_trucks, delivery_day = max((len(schedule[day],day) for day in candidate_days))
+        #         max_trucks, delivery_day = max((len(schedule[day]),day) for day in candidate_days)
         #     else:
-        #         min_trucks, delivery_day = min((len(schedule[day],day) for day in candidate_days))
+        #         min_trucks, delivery_day = min((len(schedule[day]),day) for day in candidate_days)
         #     # if day cost < truck cost:
         #         # spread it out
                
-        # #minimize idling cost
+        # 
         #     schedule[delivery_day].append(truck)
         #     truck.ID = len(schedule[delivery_day])
-        #     update_delivery_day(delivery_day, truck, schedule)
+        #     update_delivery_day(delivery_day, truck, instance)
     
     #print
     return schedule

@@ -10,23 +10,26 @@ import time
 import math
 
 class Truck:
-    def __init__(self, capacity, max_km):
+    def __init__(self, capacity, max_km, first_toDay):
         self.capacity = capacity
         self.max_km = max_km
         self.route = []  # List to store sequence of serviced requests (using IDs or similar)
         self.current_load = 0
         self.current_km = 0
         self.current_location = 1 # depot location ID
+        self.smallest_toDay = first_toDay
 
     def can_add_request(self, instance, request):
         return (self.current_load + request.amount * instance.Machines[request.machineID-1].size <= self.capacity and
-                self.current_km + instance.distances[request.customerLocID-1][self.current_location-1] + instance.distances[request.customerLocID-1][0] <= self.max_km) 
-
+                self.current_km + instance.distances[request.customerLocID-1][self.current_location-1] + instance.distances[request.customerLocID-1][0] <= self.max_km and 
+                self.smallest_toDay >= request.fromDay and self.smallest_toDay <= request.toDay) 
+   
     def add_request(self, instance, request):
         self.route.append(request.ID)
         self.current_load += request.amount * instance.Machines[request.machineID-1].size 
         self.current_km += instance.distances[request.customerLocID-1][self.current_location-1]
         self.current_location = request.customerLocID 
+        self.smallest_toDay = min(self.smallest_toDay, request.toDay)
 
     def can_travel_but_full(self, instance, request):
         return (self.current_load + request.amount * instance.Machines[request.machineID-1].size  > self.capacity and 
@@ -51,7 +54,8 @@ class Truck:
 
 def grasp_routes(instance, random_factor, time_limit, max_day_difference):
     start_time = time.time()
-    all_routes = []
+    routes_set = set()
+    routes_with_distance = []
 
     while time.time() - start_time < time_limit:
         trucks = []
@@ -71,7 +75,7 @@ def grasp_routes(instance, random_factor, time_limit, max_day_difference):
                     if truck.can_add_request(instance, request) and truck.can_add_based_on_toDay(instance, request, max_day_difference):
                         truck.add_request(instance, request)
             else:
-                new_truck = Truck(instance.truckCapacity, instance.truckMaxDistance)
+                new_truck = Truck(instance.truckCapacity, instance.truckMaxDistance, request.toDay)
                 if new_truck.can_add_based_on_toDay(instance, request, max_day_difference):
                     new_truck.add_request(instance, request)
                     trucks.append(new_truck)
@@ -82,9 +86,12 @@ def grasp_routes(instance, random_factor, time_limit, max_day_difference):
                 truck.back_to_depot(instance)
             route_tuple = tuple(truck.route)
             distance = truck.current_km
-            all_routes.append([list(route_tuple), distance])
+            if route_tuple not in routes_set:
+                routes_set.add(route_tuple)
+                routes_with_distance.append((list(route_tuple), distance))
 
-    return all_routes    
+    return routes_with_distance
+
 
 def split_routes_and_distances(all_routes):
     routes = []
@@ -164,7 +171,7 @@ def update_latest_delivery_days(instance):
 
     for i in range(len(instance.Requests)):
         delivery_day_before_install = instance.Requests[i].dayOfInstallation-1
-        print(f"Request ID: {i+1}, Delivery Day Before Install: {delivery_day_before_install}, Must Deliver On: {instance.Requests[i].toDay}")
+        #print(f"Request ID: {i+1}, Delivery Day Before Install: {delivery_day_before_install}, Must Deliver On: {instance.Requests[i].toDay}")
         # Initialize latest_delivery_day with a default value
         if delivery_day_before_install > instance.Requests[i].toDay:
             latest_delivery_day = instance.Requests[i].toDay
@@ -341,7 +348,7 @@ def search(instance, latest_delivery_days, iterations=4):
 
     for i in range(iterations):
         print(f"Starting iteration {i+1} with max_day_difference = {max_day_difference}")
-        routes_by_request = grasp_routes(instance, random_factor=50, time_limit=5, max_day_difference=max_day_difference)
+        routes_by_request = grasp_routes(instance, random_factor=50, time_limit=10, max_day_difference=max_day_difference)
         possible_routes, routes_distances = split_routes_and_distances(routes_by_request)
 
         chosen_routes, total_distance, distance_and_route_costs, total_routes = truck_route_solver(instance, possible_routes, routes_distances)
@@ -412,7 +419,7 @@ def return_truck_gurobi_solution(instance):
     latest_delivery_days = update_latest_delivery_days(instance)
 
     # instance 5
-    if instance.truckCost == 0 and instance.truckDayCost == 0 and instance.truckDistanceCost == 0:
+    if instance.truckCost + instance.truckDayCost + instance.truckDistanceCost == 0:
         print('\033[95m' + "*" * 50+ ' Truck Cost is 0, Assigning Trucks Naively '+ "*" * 50 + '\033[0m')
 
         schedule = naive_assign_truck(instance, latest_delivery_days)
@@ -430,18 +437,21 @@ def return_truck_gurobi_solution(instance):
         solution.truck_cost = best_distance_and_route_costs + best_truck_and_idle_costs - best_idle_cost
         solution.idle_machine_costs = best_idle_cost
 
+        print(solution)
+
     return solution
 
 
 
 if __name__ == "__main__":
     # Read instance
-    instance = readInstance.readInstance(readInstance.getInstancePath(5))
+    instance = readInstance.readInstance(readInstance.getInstancePath(6))
 
 
     print('\033[95m' + "*" * 50 + " Solving Truck...... " + "*" * 50 + '\033[0m')
 
     solution = return_truck_gurobi_solution(instance)
+    print(solution)
 
     # Still not optimal in some cases. can be improved later
 

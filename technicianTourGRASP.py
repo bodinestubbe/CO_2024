@@ -76,65 +76,6 @@ def find_all_capable_technicians(instance):
             capable_technicians.append(tech)
     return capable_technicians
 
-def initial_technician_tours_GRASP_day_diff2(instance, time_limit_seconds, max_day_difference):
-    start_time = time.time()
-    tour_set = {}
-
-    final_tours = {tech.ID: [] for tech in instance.Technicians}
-    final_distances = {tech.ID: [] for tech in instance.Technicians}
-
-    while time.time() - start_time < time_limit_seconds:
-        available_technicians = find_all_capable_technicians(instance)
-        shuffled_requests = list(instance.Requests)
-        random.shuffle(shuffled_requests)
-
-        current_tours = {tech.ID: [] for tech in instance.Technicians}
-        current_distances = {tech.ID: 0 for tech in instance.Technicians}
-        last_locations = {tech.ID: tech.locationID for tech in instance.Technicians}
-        
-        day_bounds = {tech.ID: [float('inf'), float('-inf')] for tech in instance.Technicians}  # [min_toDay, max_toDay]
-
-        for req in shuffled_requests:
-            technician = select_technician(instance, req, available_technicians, current_distances)
-            if technician:
-                request_distance = instance.distances[last_locations[technician.ID] - 1][req.customerLocID - 1]
-                new_total_distance = current_distances[technician.ID] + request_distance
-                return_home_distance = instance.distances[req.customerLocID - 1][technician.locationID - 1]
-
-                # Update toDay bounds and check max day difference constraint
-                new_min_toDay = min(day_bounds[technician.ID][0], req.toDay)
-                new_max_toDay = max(day_bounds[technician.ID][1], req.toDay)
-                if new_max_toDay - new_min_toDay > max_day_difference:
-                    continue  # Skip adding this request if it violates the day difference constraint
-
-                if new_total_distance + return_home_distance <= technician.maxDayDistance:
-                    current_tours[technician.ID].append(req.ID)
-                    current_distances[technician.ID] = new_total_distance
-                    last_locations[technician.ID] = req.customerLocID
-                    
-                    day_bounds[technician.ID] = [new_min_toDay, new_max_toDay]  # Update day bounds
-
-
-                    final_distance = current_distances[technician.ID] + instance.distances[last_locations[technician.ID] - 1][technician.locationID - 1]
-                    tour_key = (frozenset(current_tours[technician.ID]), final_distance)
-                    if tour_key not in tour_set:
-                        tour_set[tour_key] = (technician.ID, current_tours[technician.ID].copy())
-
-                    if len(current_tours[technician.ID]) >= technician.maxNrInstallations:
-                        break
-
-        # Prepare for a new iteration
-        current_tours = {tech.ID: [] for tech in instance.Technicians}
-        current_distances = {tech.ID: 0 for tech in instance.Technicians}
-        last_locations = {tech.ID: tech.locationID for tech in instance.Technicians}
-
-    # Add unique tours to the respective technician's list
-    for key, (tech_id, tour) in tour_set.items():
-        final_tours[tech_id].append(tour)
-        final_distances[tech_id].append(key[1])
-
-    return final_tours, final_distances
-
 
 def initial_technician_tours_GRASP_day_diff(instance, time_limit_seconds, max_day_difference):
     start_time = time.time()
@@ -313,7 +254,7 @@ def mip_solver_all(instance, possible_tours, tour_distances):
     time_limit = 7200 # can change this 
     model.setParam('TimeLimit', time_limit)
     model.setParam(GRB.Param.PoolSearchMode, 2)  # Enable solution pool
-    model.setParam(GRB.Param.PoolSolutions, 500)  # Store up to 30 solutions
+    model.setParam(GRB.Param.PoolSolutions, 50)  # Store up to 50 solutions
     model.setParam(GRB.Param.PoolGap, 0.2)  # Allow up to 20% gap from the optimal solution
     model.setParam('Method', 1)  # 1 is for dual simplex
     model.setParam('Sifting', 1)  # Enable sifting
@@ -358,11 +299,11 @@ def mip_solver_all(instance, possible_tours, tour_distances):
             }
             solutions.append(solution_details)
 
-            print(f"Total Distance for Solution {i+1}: {total_distance}")
-            print(f"Number of Technicians Used in Solution {i+1}: {int(r.sum().getValue())}")
-            print(f"Number of Tours in Solution {i+1}: {int(y.sum().getValue())}")
-            print("Total cost for Solution {0} = {1}".format(i+1, model.PoolObjVal))
-            print()
+            # print(f"Total Distance for Solution {i+1}: {total_distance}")
+            # print(f"Number of Technicians Used in Solution {i+1}: {int(r.sum().getValue())}")
+            # print(f"Number of Tours in Solution {i+1}: {int(y.sum().getValue())}")
+            # print("Total cost for Solution {0} = {1}".format(i+1, model.PoolObjVal))
+            # print()
 
     elif model.status == GRB.INFEASIBLE:
         print("*" * 50 + ' Model is infeasible ' + "*" * 50)

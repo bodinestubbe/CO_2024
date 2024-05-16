@@ -214,7 +214,7 @@ def return_feasible_solution(instance):
 
 
 def integrated_solver(instance, truck_routes, routes_distances, tech_tours, solution):
-    model = Model("Integrated")
+    model = Model("Integrated Model")
 
     no_depot_routes = remove_depot_from_route(truck_routes)
 
@@ -449,16 +449,16 @@ def truck_route_solver_all(instance, routes, routes_distances):
 
 def return_integrated_sol(instance):
 
-    '''
-    Assign truck -> schedule on their earliest delievey days -> assign technician tours -> local search
-    '''
-    time_limit = 30 
 
-    if (instance.truckCost + instance.truckDayCost + instance.truckDistanceCost == 0) or instance.truckCost / instance.technicianCost < 5 and instance.truckCost / instance.truckDistanceCost < 10000:
-        max_day_difference = round(instance.days * 0.6,0)  
+    time_limit = 30 
+    if instance.truckCost / instance.technicianCost >= 5 and instance.truckCost / instance.truckDistanceCost >= 10000:
+        max_day_difference = 2 # try 2 or 3
+
     else:
-        max_day_difference = 3 #2 or 3 
+        max_day_difference = round(instance.days * 0.6,0)
     
+    print('max day difference:', max_day_difference)
+        
 
     print('\033[92m' + "*" * 10 + " Truck GRASP...... " + "*" * 10 + '\033[0m')
     truck_routes = grasp_routes(instance, random_factor=50, time_limit=time_limit, max_day_difference=max_day_difference)
@@ -467,7 +467,7 @@ def return_integrated_sol(instance):
 
     print('\033[92m' + "*" * 10 + " Tech GRASP...... " + "*" * 10 + '\033[0m')
     # tech: 60, 120, 600
-    possible_tours, tour_distances = initial_technician_tours_GRASP_day_diff(instance, 120, max_day_difference)
+    possible_tours, tour_distances = initial_technician_tours_GRASP_day_diff(instance, 600, max_day_difference)
     tech_solutions = mip_solver_all(instance, possible_tours, tour_distances)  # expecting a list of solution details
 
 
@@ -486,7 +486,6 @@ def return_integrated_sol(instance):
         print('\033[92m' + "*" * 10 + " Final ...... " + "*" * 10 + '\033[0m')
 
         final_solution = integrated_solver(instance, truck_routes, truck_distances, chosen_tours, solution)
-        print(final_solution)
 
         if final_solution.total_cost < best_cost:
             best_cost = final_solution.total_cost
@@ -497,11 +496,15 @@ def return_integrated_sol(instance):
     return best_solution
 
 if __name__ == "__main__":
-    instance_path = readInstance.getInstancePath(11)
+    instance_path = readInstance.getInstancePath(16)
     instance = readInstance.readInstance(instance_path)
 
-    return_integrated_sol(instance)
+    best_solution = return_integrated_sol(instance)
 
+    '''
+    use neighborhood search -> swap, remove, insert -> improve schedule -> min cost 
+    add working day constraint 
+    '''
     
 
 

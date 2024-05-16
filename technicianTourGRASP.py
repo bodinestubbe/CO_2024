@@ -5,30 +5,6 @@ import random
 from solution import DailySchedule, Solution
 import time
 
-def select_technician_weight(instance, request, available_technicians, current_distances):
-    # Filter candidates based on the request's machine type, technician's capabilities, and max distance
-    candidates = [tech for tech in available_technicians if tech.capabilities[request.machineID - 1] == 1 and current_distances[tech.ID] + instance.distances[tech.locationID - 1][request.customerLocID - 1] <= tech.maxDayDistance]
-    candidates = [available_technicians[tech] for tech in range(len(available_technicians)) 
-                  if available_technicians[tech].capabilities[request.machineID - 1] == 1 
-                  and current_distances[available_technicians[tech].ID] + instance.distances[available_technicians[tech].locationID - 1][request.customerLocID - 1] <= available_technicians[tech].maxDayDistance]
-
-    if not candidates:
-        return None
-
-    # Calculate the inverse ratio of distance to max travel distance and normalize
-    technician_weights = []
-    for tech in candidates:
-        distance = instance.distances[tech.locationID - 1][request.customerLocID - 1]
-        adjusted_max_day_distance = max(tech.maxDayDistance, 0.01)  # Ensure non-zero denominator
-        weight = 1.0 / ((distance+1e-4) / adjusted_max_day_distance)
-        technician_weights.append(weight)
-
-    total_weight = sum(technician_weights)
-    normalized_weights = [w / total_weight for w in technician_weights]
-
-    selected_technician = random.choices(candidates, weights=normalized_weights, k=1)[0]
-    return selected_technician
-
 
 def select_technician(instance, request, available_technicians, current_distances):
     # Filter candidates based on the request's machine type, technician's capabilities, and max distance
@@ -337,10 +313,13 @@ def mip_solver_all(instance, possible_tours, tour_distances):
     time_limit = 7200 # can change this 
     model.setParam('TimeLimit', time_limit)
     model.setParam(GRB.Param.PoolSearchMode, 2)  # Enable solution pool
-    model.setParam(GRB.Param.PoolSolutions, 100)  # Store up to 30 solutions
+    model.setParam(GRB.Param.PoolSolutions, 500)  # Store up to 30 solutions
     model.setParam(GRB.Param.PoolGap, 0.2)  # Allow up to 20% gap from the optimal solution
+    model.setParam('Method', 1)  # 1 is for dual simplex
+    model.setParam('Sifting', 1)  # Enable sifting
+    model.setParam('SiftMethod', 1)  # Use dual simplex for sifting sub-problems
     model.setParam('MIPFocus', 1) 
-    model.setParam('Heuristics', 0.05)  # Reduce the use of heuristics
+    model.setParam('Heuristics', 0.1)  # Reduce the use of heuristics
     # model.setParam('IterationLimit', float('inf'))  # Remove iteration limits if applicable
     # model.setParam('NodeLimit', float('inf'))  # Remove node limits for MIPs
 
